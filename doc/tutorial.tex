@@ -1,0 +1,745 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{チュートリアル: $\alpha$クオーツを例にして}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+このチュートリアルでは$\alpha$クオーツの構造最適化、projected DOSの計算、および
+バンド構造の計算、セル構造の最適化を行う。
+
+このチュートリアルでは、Intel Fortran CompilerとOpenMPIを使っていることを
+前提にする。そうではない場合には、論理機番の設定方法やmpirunの起動方法に
+読み替えが必要であるが、gfortranについては同じ方法で論理機番が設定できるように
+xTAPP自体が対応している。
+
+なおこの配布パッケージにはチュートリアルの入力例と出力例が同梱されている。
+\verb+sample/tutorial+を見ること。
+
+\section{$\alpha$クオーツの構造}
+\begin{itemize}
+\item 空間群 $P3_221$ No. 154
+\item $a = 4.9134$ \AA
+\item $c = 5.4052$ \AA
+\item $\alpha = \beta = 90^\circ$
+\item $\gamma = 120^\circ$
+\item 一セル中のSiO$_2$の数$Z = 3$
+\item 原点のオフセット$(0,0,-1/3)$
+\item 原子位置（セル座標）
+\begin{verbatim}
+ Si 3a 0.4699 0.0000 0.0000
+ O  6c 0.4141 0.2681 0.1188
+\end{verbatim}
+2列目はWyckoff positionの記号である。
+\end{itemize}
+
+Wyckoff positionの計算は、bilbao crystallographic server,
+\verb+http://www.cryst.ehu.es/+で行ってくれる。
+
+Siの座標からoriginのシフト量が$(0,0,2/3)$として、3aは
+\begin{verbatim}
+  (x,0,2/3)
+  (0,x,1/3)
+  (-x,-x,0)
+\end{verbatim}
+であり、6cは
+\begin{verbatim}
+  (x,y,z)
+  (-y,x-y,z+2/3)
+  (-x+y,-x,z+1/3)
+  (y,x,-z)
+  (x-y,-y,-z+1/3)
+  (-x,-x+y,-z+2/3)
+\end{verbatim}
+である。
+
+これらWyckoff positionを原点のオフセット分ずらしておいて全部の原子の位置がセル座標で
+\begin{verbatim}
+ Si  0.4699  0.0000  0.666666666666
+ Si  0.0000  0.4699  0.333333333333
+ Si -0.4699 -0.4699  0.0
+ O   0.4141  0.2681  0.785466666666
+ O  -0.2681  0.1460  0.452133333333
+ O  -0.1460 -0.4141  0.1188
+ O   0.2681  0.4141  0.214533333333
+ O   0.1460 -0.2681  0.547866666666
+ O  -0.4141 -0.1460  0.8812
+\end{verbatim}
+とわかる。
+
+同じサイトでGeneral positionを調べればそれは実空間での対称性の情報となる。
+なお、実際にはこれは6cと同じである。
+
+これを使って「逆空間で」働く対称性行列は
+\begin{verbatim}
+ 1  0  0   0
+ 0  1  0   0
+ 0  0  1   0
+\end{verbatim}
+
+\begin{verbatim}
+-1 -1  0   0
+ 1  0  0   0
+ 0  0  1   2/3
+\end{verbatim}
+
+\begin{verbatim}
+ 0  1  0   0
+-1 -1  0   0
+ 0  0  1   1/3
+\end{verbatim}
+
+\begin{verbatim}
+ 0  1  0   0
+ 1  0  0   0
+ 0  0 -1   0
+\end{verbatim}
+
+\begin{verbatim}
+ 1  0  0   0
+-1 -1  0   0
+ 0  0 -1   1/3
+\end{verbatim}
+
+\begin{verbatim}
+-1 -1  0   0
+ 0  1  0   0
+ 0  0 -1   2/3
+\end{verbatim}
+
+である。反転対称性はない。この際に必要な行列計算はoctaveかMATLABを使うとできる。
+
+この計算は、逆空間での対称操作の行列要素は実空間の行列の逆行列の転置行列
+であることと、General positionがprimitive cellではなく、
+conventional cellについて書かれていること
+を知っていればできるが、
+実際にこの計算を行い、その結果をxTAPPの入力フォーマットが必要とする順番で出力する
+octaveのプログラムがサンプルの\verb+symop-quartz.m+である。
+
+これを使用する時には、あらかじめ表示フォーマットをrational approximationを
+使用するようにセットしておくと良い。
+\begin{verbatim}
+octave:1> format rat
+octave:2> source symop-quartz.m
+\end{verbatim}
+なお対称操作を表現する\verb+symopr+関数と
+primitive cellをconventional cellの基本ベクトルで表現する
+行列\verb+aa+を適宜書き換えることで、その他の対称性についても容易に計算できる。
+
+\section{原子位置から対称性を見つける方法}
+
+このチュートリアルでは空間群の種類が既知であることを
+前提にしている。決まった結晶構造から計算を始める場合には
+この前提が正しいはずである。しかしながら空間群が未知で原子の位置のみが
+既知である場合には、空間群を決めなくてはならない。
+
+\subsection{FINDSYMというインターネットのサイトを使う方法}
+
+サイトは\verb+http://stokes.byu.edu/iso/findsym.php+である。
+
+このサイトに先のデータを入力すると空間群の番号、
+Wyckoff position、対称性行列を含むcifファイルが得られるので
+ここから始めれば良い。
+
+なお、\verb+Type of each atom in the unit cell+には、この例の場合
+\verb+3*Si 6*O+を与える。
+
+\verb+Position of each atom in the unit cell+には
+\begin{verbatim}
+  0.4699  0.0000  0.666666666666
+  0.0000  0.4699  0.333333333333
+ -0.4699 -0.4699  0.0
+  0.4141  0.2681  0.785466666666
+ -0.2681  0.1460  0.452133333333
+ -0.1460 -0.4141  0.1188
+  0.2681  0.4141  0.214533333333
+  0.1460 -0.2681  0.547866666666
+ -0.4141 -0.1460  0.8812
+\end{verbatim}
+を与える。
+
+\subsection{phonopyの対称性機能を使う方法}
+
+phonopyには原子構造の対称性を発見する機能がある。
+これを使って対称性データをつくるには、まず原子構造を
+POSCARファイルに書き込み、それをphonopyに解析させ、
+その結果をxTAPP向けに変換すれば良い。
+
+POSCARファイルの生成にはxTAPP付属のxticonvコマンド
+phonopyの対称性データファイル(YAML形式)の変換には
+xTAPP-util付属のsym2xti.pyを用いる。
+
+xTAPPの入力ファイル\verb+quartz.cg+から
+必要な対称性データをxTAPPの入力形式で生成してファイル\verb+symdata+
+に格納する手順の例は以下のようになる。
+
+\begin{verbatim}
+$ xticonv poscar quartz.cg > POSCAR
+$ phonopy --symmetry > sym.yml
+$ sym2xti.py sym.yml > symdata
+\end{verbatim}
+
+
+\section{入力データの用意}
+
+入力データは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# [名前]
+...
+
+\end{verbatim}
+\hrule\vspace{5mm}
+の形式を取っているセクションに分かれているテキストファイルである。
+セクションにはFortranのnamelistが含まれていることがある。
+以下順番にそれぞれのセクションを書いていく。セクションの順番には意味がないので
+どの順番に書いても良い。詳しくはinputformat.texを参照すること。
+
+以下の例ではnamelist中に文字列を指定している部分があるが、
+この文字列を必ず引用符でくくらないとならない処理系があるので注意をすること。
+gfortranはそのような例である。
+
+なおこの節で作成する各セクションはまとめてquartz.cgに収納する。
+
+\subsection{原子構造データの構成}
+
+対称性を指定するsymmetry dataセクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# symmetry data
+&symmetry
+symmetry_format = 'reciprocal',
+number_sym_op = 6,
+has_inversion = 0,
+denom_trans = 3
+/
+ 1  0  0  0  1  0  0  0  1  0  0  0
+-1  1  0 -1  0  0  0  0  1  0  0  2
+ 0 -1  0  1 -1  0  0  0  1  0  0  1
+ 0  1  0  1  0  0  0  0 -1  0  0  0
+ 1 -1  0  0 -1  0  0  0 -1  0  0  1
+-1  0  0 -1  1  0  0  0 -1  0  0  2
+\end{verbatim}
+\hrule\vspace{5mm}
+
+となる。原子の位置情報などを指定する
+atom dataセクションは、使用する擬ポテンシャルは4価のシリコンと6価の酸素とし
+それぞれ1番目と2番目の擬ポテンシャルとすると
+\vspace{5mm}\hrule
+\begin{verbatim}
+# atom data
+ 4  14
+ 6  8
+ 1   0.4699  0.0000  0.666666666666
+ 1   0.0000  0.4699  0.333333333333
+ 1  -0.4699 -0.4699  0.0
+ 2   0.4141  0.2681  0.785466666666
+ 2  -0.2681  0.1460  0.452133333333
+ 2  -0.1460 -0.4141  0.1188
+ 2   0.2681  0.4141  0.214533333333
+ 2   0.1460 -0.2681  0.547866666666
+ 2  -0.4141 -0.1460  0.8812
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。ここで２,3行目はそれぞれシリコンの価電価が４、原子番号が14であり、
+酸素の価電荷が6、原子番号が8であることを指定している。この情報はそれぞれ
+1,2番目の擬ポテンシャルと照合される。
+
+\subsection{サンプル$k$点データの構成}
+
+$6\times 6\times 4$のサンプル$k$点を構成する。$\Gamma$点を通らない
+メッシュを作る。サンプル$k$点関連の情報を指定するk-points dataセクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# k-points data
+&smpl_kpt
+dos_mode = 'COS',
+dos_mesh = 2, 2, 2,
+bz_mesh = 12,
+bz_number_tile = 1
+/
+ 6  6  6
+ 2  2  2
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。これは
+\begin{enumerate}
+\item フェルミ面積分は$\cos$展開法を使う。
+\item $\cos$展開したバンド分散は$2\times 2\times 2$のメッシュで積分する。
+\item サンプル$k$点の位置を指定するため第一ブリュアンゾーンを$12\times 12\times 12$に等分割する。分割でできる格子は原点を通る。以下この格子を拡張ゾーンに拡大して考える。
+\item 格子点の(6,6,6)の位置から始めて、(2,2,2)の間隔でサンプル$k$点を格子状に選出する。
+$a,b,c$軸方向のサンプル位置は第一ブリュアンゾーンに限定すると
+      \begin{tabbing}
+       mmmm\=mmm\=mmm\=mmm\=mmm\=mmm\=mmm\=mmm\kill\\
+       $a,b$,$c$:\> 6,\> 4,\>  2,\> 0,\>  -2,\>  -4, \> (-6)
+      \end{tabbing}
+      となる。なおブリュアンゾーンの端は周期的につながっていることに注意すること。
+\item $12/2\times 12/2\times 12/2 = 6\times 6\times 6$のサンプル$k$点が得られる。
+\item このサンプル$k$点に対称性でつながっているすべての$k$点を集めたものが
+      全サンプル$k$点である。この場合には、元のサンプル$k$点と同一の集合であるが、
+      サンプリングの原点の位置によってはこの数が$6\times 6\times 6$よりも大きいことがある。
+\end{enumerate}
+を意味する。
+ここで$\alpha$クオーツは絶縁体なので、バンドの分散関係$\epsilon_n(k)$の
+$\cos$展開は実質必要でないため\verb+dos_mesh+は適度に小さいメッシュを取っている。
+
+\subsection{計算条件のセットアップ}
+
+平面波基底のカットオフエネルギーを$36$Ryに取るには、波数を$6$に取れば良い。
+また、スピンなしの計算を行うこととする。
+その他の条件を、
+\begin{itemize}
+\item 格子定数$a = 9.2850$ bohrであり、$c/a = 1.1001$である
+\item 元素の数は2個。原子数は全部で9個。
+\item 価電子数は48個である。したがって価電子帯に必要なバンドは24本。計算するバンド数は
+少し多めに28本とする。
+\item SCFは30回も回せばこの場合収束するはずである。
+\item 交換相関汎関数にPBEを使う。
+\item 多めに計算の打ち切り時間を7200秒にセット。
+\item 終了時に波動関数を書き出しておく。
+\end{itemize}
+とすると、\verb+main data+セクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# main data
+&tappinput
+lattice_factor = 9.2850,
+lattice_list = 1.0, 0.0,  0.0, -0.5,  0.866025403784439,  0.0,  0.0,  0.0,   1.1001,
+cutoff_wave_function = 6.0,
+number_element = 2,
+number_atom = 9,
+number_band = 28,
+store_wfn = 1,
+scf_number_iter_1st = 30,
+scf_number_iter = 30,
+xc_type = 'PBE',
+control_uptime = 7200.0
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+ここで、\verb+lattice_factor+は計算セル＝単位格子の典型的な長さ、
+\verb+lattice_list+は計算セルの基本並進ベクトル$\mathbf{a}_1$、$\mathbf{a}_2$、
+$\mathbf{a}_3$について$\mathbf{a}_1$から順にそれぞれの$x,y,z$成分を
+並べたもので、その単位は\verb+lattice_factor+単位である。
+
+構造最適化を行うので、さらに\verb+struct_opt data+セクションをセットしておく。
+構造最適化を力場が$1\times 10^{-4}$hartree/bohrまで小さくなるように行うには
+\vspace{5mm}\hrule
+\begin{verbatim}
+# struct_opt data
+&struct_opt
+converge_force = 1.0d-4
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+と設定する。また特に制約を課さずに最適化するので、構造最適化時の
+制約条件を指定する\verb+str_opt_constr data+セクションを
+\vspace{5mm}\hrule
+\begin{verbatim}
+# str_opt_constr data
+ 1
+ 0
+\end{verbatim}
+\hrule\vspace{5mm}
+としておく。これは最適化のための固定行列が自明な1個だけであり、
+それ以外に設定される原子の個数が0であることを示している。
+
+\subsection{入力ファイルの確認}
+
+\verb+quartz.cg+に入っている構造データを可視化のために変換するツール\verb+xticonv+がxTAPPの
+配布キットに入っている。これを用いてCIF形式(\verb+http://www.iucr.org/resources/cif+)
+に変換するためには
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ xticonv cif quartz.cg > quartz.cif
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。XYZ形式なら
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ xticonv xyz quartz.cg > quartz.xyz
+\end{verbatim}
+\hrule\vspace{5mm}
+である。
+
+CIF形式やXYZ形式のファイルの可視化は、VESTA、Jmolなどでできる。
+
+\subsection{入出力ファイルの一括指定}
+
+xTAPPはいくつものファイルを作成するが、この文書ではそれらの名前を
+与えた基幹部分と既定のサフィックスの形で指定することにする。
+この場合にはfile map dataセクションを設定するのが良い。
+基幹部分を\verb+quartz+とし、使用する擬ポテンシャルとして
+カレントディレクトリにある\verb+ps-Si-pbe+と\verb+ps-O-pbe+
+をそれぞれ1番目、2番目の原子種に使用することにした場合、
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+# file map data
+&filemap
+basename = quartz,
+number_PP_file = 2
+/
+ps-Si-pbe
+ps-O-pbe
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+\section{構造最適化プログラムの実行}
+
+擬ポテンシャルはxTAPP-testに付属のps-Si-pbeとps-O-pbeを用いる。これらは
+PSディレクトリ以下にある。これらをカレントディレクトリにコピーしておく。
+
+まず、初期化プログラム\verb+inipot+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。同様な構造で一度動かせば良く、毎回実行する必要はない。
+
+\verb+inipot+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./quartz.cg
+$ mpirun ./inipot > inipot.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで1 MPI processをつかって\verb+inipot+が動く。
+ログはinipot.logに回収している。
+実行が正常に終わるとカレントディレクトリにいくつかの中間ファイルが作成される。
+
+次に構造最適化を行うプログラム\verb+cgmrpt+を動かす。
+プログラムはカレントディレクトリにコピーしてあるものとする。
+mpirunに渡すランクファイルを6corefproc.rkfとしておく。これの例は
+xTAPP-testにあるが本質的に実行環境依存である。例えば
+バッチシステムが動いている場合には必要ないはずである。
+
+2 MPI processで計算を実行させる入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./quartz.cg
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで2 MPI processをつかって\verb+cgmrpt+が動く。
+ログはcgmrpt.logに回収している。
+
+この実行においては波動関数、ローカルポテンシャル、電荷密度、結果のサマリがそれぞれ
+\vspace{5mm}\hrule
+\begin{verbatim}
+quartz.wfn
+quartz.lpt
+quartz.rho
+quartz.str
+\end{verbatim}
+\hrule\vspace{5mm}
+に保存される。これらサフィックスの詳細は''programs.tex''を参照すること。
+
+\section{結果の確認}
+
+\subsection{ログファイルの見方}
+
+構造最適化がどのように収束したかは、ログを\verb+MAX FORCE+で検索すれば良い。
+\verb+MAX FORCE+は原子にかかっている力の最大を示している。収束していなくても
+計算は一定回数で打ちきられるため、必ず\verb+MAX FORCE+を確認しておくこと。
+
+構造最適化で得られた原子構造、その全エネルギーなどのデータは\verb+quartz.str+に
+出力されている。
+\begin{itemize}
+\item \verb+lattice_factor+と\verb+lattice_list+は入力ファイルと同じ意味。
+\item \verb+total_energy+には全エネルギー$E$
+\item \verb+stress_tensor+にはストレスのテンソル\[ -\frac{\partial E}{\partial\epsilon_\nu};\quad \nu は xx,yy,zz,yz,zx,xyの順 \]
+\item \verb+fermi_energy+はフェルミエネルギー。それぞれのスピン成分ごとに個数を決めるモードがあるので二つある。
+\item \verb+# atom_kind, atom_position by cell coordinate+以下に原子種の番号とセル座標での原子位置
+\item \verb+# force by Cartesian coordinate+以下に原子の力場。原子単位系(=hartree/bohr)、デカルト座標系での力。
+\end{itemize}
+
+同様の出力はログにもでている。
+\begin{itemize}
+ \item \verb+TOTAL     ENERGY+に全エネルギー
+ \item \verb+TOTAL     STRESS+に全エネルギーの体積微分
+ \item \verb+TOTAL FORCE IN HT+に力場のデカルト座標成分
+ \item \verb+FERMI     ENERGY+にフェルミエネルギー
+ \item \verb+UNIT CELL+にセル形状
+\end{itemize}
+などである。
+
+\subsection{最適化構造の可視化}
+
+\verb+quartz.str+に入っている構造データを可視化のために変換するツール\verb+strconv+がxTAPPの
+配布キットに入っている。これを用いてCIF形式(\verb+http://www.iucr.org/resources/cif+)
+に変換するためには
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ strconv cif quartz.str > quartz.cif
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。XYZ形式なら
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ strconv xyz quartz.str > quartz.xyz
+\end{verbatim}
+\hrule\vspace{5mm}
+である。
+
+CIF形式やXYZ形式のファイルの可視化は、VESTA、Jmolなどでできる。
+
+\section{バンド図を描く}
+
+\subsection{トレースする$k$点の決定}
+
+バンド図を描くために必要な特殊$k$点の位置も、bilbao crystallographic server、
+\verb+http://www.cryst.ehu.es/+で行ってくれる。これらのつながり具合をBrillouin Zoneで
+確認することもここでできる。
+
+トレースする$k$点を順に
+\begin{enumerate}
+\item G (0,0,0)
+\item K (1/3, 1/3, 0)
+\item H (1/3, 1/3, 1/2)
+\item A (0,0,1/2)
+\item G (0,0,0)
+\item M (1/2,0,0)
+\end{enumerate}
+と設定し、それぞれの間の分点を
+\begin{enumerate}
+\item GK 10
+\item KH 10
+\item HA 10
+\item AG 10
+\item GM 10
+\end{enumerate}
+と設定する。
+
+\subsection{入力データの準備}
+
+次にバンドを計算するプログラム\verb+vbpef+が必要とするセクション\verb+trace band data+を
+作成し、構造最適化に使った入力データに付け加える。
+また計算するバンド数はシリコン由来の非占有バンドも含めて36本とする。
+
+作成するデータは5区間分であるから
+\vspace{5mm}\hrule
+\begin{verbatim}
+# trace band data
+ &trace_band
+ number_band = 36,
+ number_trace_block = 5
+ /
+   'G'         'K'         'H'         'A'         'G'         'M'
+   0.00000000  0.33333333  0.33333333  0.00000000  0.00000000  0.50000000
+   0.00000000  0.33333333  0.33333333  0.00000000  0.00000000  0.00000000
+   0.00000000  0.00000000  0.50000000  0.50000000  0.00000000  0.00000000
+             10          10          10          10          10
+\end{verbatim}
+\hrule\vspace{5mm}
+である。各列に$k$点のシンボルと位置を指定している。最後の列は区間毎の分割数である。
+これをもとのquartz.cgに付け加えてquartz.pefとしておく。
+
+次に\verb+main data+セクションにおいて、namelistの\verb+&tappinput+に
+\verb+initial_lpt=1+を付け加えて、\verb+vbpef+が構造最適化時に
+計算済みのローカルポテンシャルを読み込むように設定しておく。
+
+そして、構造最適化済みの構造データでquartz.pefの\verb+atom data+セクションを置き換えておく。
+
+\subsection{バンド計算プログラムの実行}
+
+擬ポテンシャルはxTAPP-testに付属のps-Si-pbeとps-O-pbeを用いる。これらは
+PSディレクトリ以下にある。
+
+まず、初期化プログラム\verb+inipot+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。同様な構造で一度動かせば良く、毎回実行する必要はない。
+
+\verb+inipot+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./quartz.pef
+$ mpirun ./inipot > inipot.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで1 MPI processをつかって\verb+inipot+が動く。
+ログはinipot.logに回収している。
+
+次に、バンド計算プログラム\verb+vbpef+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。このプログラムは収束済みのローカルポテンシャルを必要とするので
+注意すること。また、このローカルポテンシャルを計算したときの原子構造と同じ
+原子構造を\verb+vbpef+に渡す必要がある。この原子構造データを入力ファイルからではなく
+構造最適化が収束した時の中間ファイルから引き継がせると手間が省けるが、このためには
+\verb+main data+セクションでnamelistの\verb+tapp input+で\verb+chain_calc = 3+
+を設定すれば良い。
+
+\verb+vbpef+の追跡したk点の固有値データを\verb+quartz.band+に格納させることにすると、
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./quartz.pef
+$ mpirun -np 2 -rf 6corefproc.rkf ./vbpef > vbpef.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで2 MPI processをつかって\verb+vbpef+が動く。
+ログはvbpef.logに回収している。
+
+\subsection{バンド図を作成する}
+
+諏訪氏が開発したものを多少改変したバンド図作成ツールvbpef2gp-lsdaに
+よって、追跡したk点の固有値データからバンド図を描くことができる。
+
+使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ vbpef2gp-lsda -fquartz ./quartz.band
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるquartz.bandが処理されて
+quartz.gp、quartz.dat、quartz.kptが作成される。
+次にgnuplotでquartz.gpを処理するとバンド図がgnuplotで作成される。
+
+\section{projected DOSを計算する}
+
+酸素のs軌道、p軌道へのprojected DOSを計算する。
+すでに計算した波動関数が必要である。
+
+\subsection{入力データの用意}
+
+酸素の軌道のデータは擬ポテンシャル生成プログラムの一つ
+solpsで作成する。擬ポテンシャルに必要な軌道データが付属していない場合、
+改めて入手する必要がある。ここではxTAPP-testに付属の
+quartz-wfn2chg.pwav.sとquartz-wfn2chg.pwav.pを使う。それぞれ
+s軌道とp軌道である。
+
+次にquartz.pefをコピーしてquartz.w2cとし、以下の編集を行う。
+まず、セクション+\verb+main data+のnamelistの\verb+&tappinput+において
+\vspace{5mm}\hrule
+\begin{verbatim}
+initial_wfn = 1
+\end{verbatim}
+\hrule\vspace{5mm}
+を付け加えて、波動関数を読み込むようにする。
+次に、新しいセクション\verb+inspect wfn data+を追加する。
+\vspace{5mm}\hrule
+\begin{verbatim}
+# inspect wfn data
+ &inspect_wfn
+ distrib_mode = 'pdos',
+ pdos_target_atom = 4
+ /
+\end{verbatim}
+\hrule\vspace{5mm}
+ここでは4番目の原子の位置のprojected DOSを計算することにする。
+
+\subsection{projected DOSの計算プログラムの実行}
+
+プログラム\verb+wfn2chg+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。このプログラムは収束済みのローカルポテンシャルを必要とするので
+注意すること。また、このローカルポテンシャルを計算したときの原子構造と同じ
+原子構造を\verb+wfn2chg+に渡すこと。
+この原子構造データを入力ファイルからではなく
+構造最適化が収束した時の中間ファイルから引き継がせると手間が省けるが、このためには
+\verb+main data+セクションでnamelistの\verb+tapp input+で\verb+chain_calc = 3+
+を設定すれば良い。
+
+計算は各軌道ごとに別に行う。ここではs軌道について説明するがp軌道でも同様である。
+
+入出力ファイルとして
+\begin{enumerate}
+\item 軌道データとして\verb+quartz-wfn2chg.pwav.s+
+\item \verb+wfn2chg+の計算したデータを\verb+quartz.dosms.s+に格納させる
+\item 入力波動関数はquartz.wfn
+\end{enumerate}
+を仮定するが、プログラムは基幹名を使って1を\verb+quartz.pwav+として入力し、
+2を\verb+quartz.dosms+として出力するので、プログラムの前後でコピーと名称変更を行なう。
+
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT18=./quartz-wfn2chg.pwav.s FORT95=./quartz.wfn
+$ cp quartz-wfn2chg.pwav.s quartz.pwav
+$ export FORT10=./quartz.w2c
+$ mpirun ./wfn2chg > wfn2chg.s.log
+$ mv quartz.dosms quartz.dosms.s
+\end{verbatim}
+\hrule\vspace{5mm}
+である。ログはwfn2chg.s.logに回収している。
+
+次にxTAPP本体に付属のユーティリティプログラムtetrapdosを用いて
+\verb+quartz.dosms.s+からprojected DOSを四面体法で計算する。tetrapdosはあらかじめ
+カレントディレクトリにコピーしてあるものとする。
+
+projected DOSの計算は
+計算上の最大軌道エネルギーから最小軌道エネルギーまで300点のメッシュで行なうことにすると
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ ./tetrapdos quartz.dosms.s 300 1 > quartz.dosms.s.pdos
+\end{verbatim}
+\hrule\vspace{5mm}
+である。すると、\verb+quartz.dosms.s.pdos+が作成されて、ここにs軌道のprojected DOSの
+データが記録される。出力のフォーマットは\verb+programs.tex+を参照すること。
+
+\section{セル形状の最適化を行う}
+
+外部圧力が10 GPaの下でセル形状を最適化する。
+
+\subsection{入力データの準備}
+
+quartz.cgをquartz-cell.cgにコピーして、
+\verb+struct_opt data+セクションを以下のように変更する。
+\vspace{5mm}\hrule
+\begin{verbatim}
+# struct_opt data
+&struct_opt
+converge_force = 1.0d-3,
+converge_stress = 1.0d-3,
+stress_scale = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+extern_pressure = 0.0003398931348792489d0
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+
+この様にすることで原子位置に加えてセル形状も最適化されるようになる。
+ここで新規に設定した\verb+stress_scale+は、セルに働くストレスを
+原子に働く力場相当に変換する係数である。
+外部圧力は\verb+extern_pressure+に原子単位系で指定する。なお指定していなければ0となる。
+\verb+converge_stress+は、セルのストレスと外部圧力の釣り合いの収束を指定するもので、
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu} - p_{ext}V\right) \textrm{;\quad for\quad} \nu = xx,yy,zz
+\]
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu}\right) \textrm{;\quad for\quad} \nu = yz,zx,xy
+\]
+の許容最大を指定する。
+
+またセル形状が変化する場合には、Bernasconi-Tosatti-Parrinelloによる運動エネルギーの補正を使う必要がある。
+ここでは\verb+main data+セクションのnamelistの\verb+&tappinput+を
+以下のように変更する。
+\vspace{5mm}\hrule
+\begin{verbatim}
+cutoff_wave_function = 8.0,
+cutoff_btp_a = 60.0,
+cutoff_btp_gc = 7.0,
+cutoff_btp_sigma = 1.0
+\end{verbatim}
+\hrule\vspace{5mm}
+これらのパラメータはセル変形に対してストレスが精度良くなめらかに計算されるよう
+に選ばなければならない。さもないと構造最適化が収束しなくなる。
+小さな\verb+converge_force+を使うためにはより厳しい条件、つまりより多くの
+平面波基底が必要である。
+
+最後にセクションfile map dataの基幹名の同様に\verb+quartz-cell+に変更しておく。
+
+\subsection{構造最適化の実行}
+
+通常の構造最適化と同様に実行させる。平面波カットオフなど条件を変えているので
+もう一度\verb+inipot+を実行する必要がある。
+
+うまく計算できている場合、\verb+cgmrpt+のログの
+\verb+XMIN PAR:+の行の最後にある\verb+IEX:+の値に1はあまりでてこないはずである。
+
+\end{document}

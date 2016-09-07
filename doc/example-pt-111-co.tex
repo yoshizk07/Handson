@@ -1,0 +1,129 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{実行例: Pt($111$)-CO表面のPDOS}
+\author{東京大学 情報理工 吉本 芳英}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+この実行例ではPt$(111)$表面に吸着されたCO分子の電子状態を計算し、
+その電子状態のCO分子単体で作った最局在ワニエ軌道へのprojected DOS
+を計算する。なおこの配布パッケージには入力例が同梱されている。
+\verb+sample/example-pt-111-co+を見ること。
+
+\section{入力データの用意}
+
+この計算はPt(111)表面の$2\times 2$スーパーセルで計算する。
+
+projected DOSの計算には2つの計算が必要である。
+1つは対象となる系Pt(111)$2\times 2$-COの計算である。
+この入力ファイルは\verb+pt-111-2x2-co.cg+である。
+もう一つは、射影する軌道を計算する系で、
+元の計算と同じセルに入れたCO分子だけの系の
+計算(\verb+co-only.cg+)である。
+
+これらの入力ファイルはあらかじめ構造最適化を
+\verb+pt-111-2x2-co-uspp.cg+で行なって最適化された構造を
+計算し、その構造を元に作成する。ワニエ関数は現在の所
+ノルム保存擬ポテンシャルの場合のみ生成できるため、
+これらの計算もノルム保存擬ポテンシャルで実行する必要がある。
+
+最局在ワニエ関数を計算するのは\verb+co-only.cg+のほうである。
+ワニエ関数は$5\sigma$, $2\pi$, $1\pi$の3組に分けて計算する。
+入力ファイルはそれぞれ、\verb+co-only.5sg.wan+、\verb+co-only.2pi.wan+
+\verb+co-only.1pi.wan+である。
+ここでのワニエ関数の局在性は、計算の対象となったバンド全部に対して一つ
+定義されるものなので、この様にしている。
+
+\verb+wannier+の入力に必要なエネルギーウィンドウとワニエ関数の初期値は
+それぞれ対象となる軌道に合わせて設定する。
+この際、この系の軌道エネルギーを確認する必要があるが、これは
+計算で出てきた\verb+co-only.str+の中を読むか、あるいは波動関数ファイルから
+xTAPP-utilの\verb+fldtool/wfneig+を使って読み取るかすれば良い。
+
+\section{計算手順}
+
+まず、\verb+pt-111-2x2-co.cg+と\verb+co-only.cg+の両方の計算を行なう。
+あらかじめ、必要な擬ポテンシャルをライブラリなどからカレントディレクトリに
+配置したのち、
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./pt-111-2x2-co.cg
+$ mpirun -np 1 ./inipot > inipot.pt-co.log
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.pt-co.log
+$ export FORT10=./co-only.cg
+$ mpirun -np 1 ./inipot > inipot.co.log
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.co.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+と処理を行なう。次にワニエ関数を作る。$1\pi$の場合、
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./co-only.1pi.wan
+$ mpirun -np 1 -rf 6corefproc.rkf ./wannier > wannier.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+とする。これで逆空間表示のワニエ関数が\verb+co-only.rcpw+に
+格納される。wannierは1 MPI processで起動すること。
+
+次にprojected DOSを\verb+wfn2chg+を用いて計算する。
+このための入力ファイルは\verb+pt-111-co.w2c+である。
+また実行のためにはあらかじめ先ほど生成したワニエ関数を
+\verb+pt-111-co.rcpw+としてコピーしておかなければならない。
+コピーののち\verb+wfn2chg+を起動する。
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ cp co-only.rcpw pt-111-2x2-co.rcpw
+$ export FORT10=./pt-111-2x2-co.w2c
+$ mpirun -np 2 -rf 6corefproc.rkf ./wfn2chg > wfn2chg.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+こうすると、projected DOSの計算に必要なデータが
+\verb+pt-111-2x2-co.dosms+に回収される。
+回収されたデータからprojected DOSを計算するには、
+xTAPP本体に付属のユーティリティプログラム\verb+tetrapdos+を使う。
+
+projected DOSの計算は
+計算上の最大軌道エネルギーから最小軌道エネルギーまで2000点
+のメッシュで行なうことにすると
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ ./tetrapdos pt-111-2x2-co.dosms 2000 1 > pt-111-2x2-co.wan.1pi.pdos
+\end{verbatim}
+\hrule\vspace{5mm}
+である。すると、\verb+pt-111-2x2-co.wan.1pi.pdos+が作成されて、
+ここに設定したワニエ関数へのprojected DOSの
+データが記録される。出力のフォーマットは\verb+programs.tex+を参照すること。
+
+なお、これで得られるグラフは刺の多いかたちになるため、
+どの状態までにどれだけの状態数があるのか判断がつかない。
+
+この場合単純な状態密度ではなく、PDOSを$-\infty$から
+設定したエネルギーまで積分した値、つまり設定したエネルギーまでの
+状態数の方がわかりやすいことがある。
+この表示の場合、状態密度が高いエネルギーの所で
+ステップ関数的に値が増大し、その段差が対応するPDOSのピークの
+積分値となる。
+
+このためには先ほどのtetrapdosの実行にかえて
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ ./tetrapdos pt-111-2x2-co.wan.dosms 2000 0 > pt-111-2x2-co.wan.1pi.0.pdos
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+\end{document}

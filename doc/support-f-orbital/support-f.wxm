@@ -1,0 +1,65 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 0.8.5 ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm10(s1,s2,s3) := -f30*s2*(3*s1*s1-s2*s2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm11(s1,s2,s3) := f31/2*s1*s2*s3;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm12(s1,s2,s3) := -f32*s2*(5*s3*s3-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm13(s1,s2,s3) := f33*s3*(5*s3*s3-3);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm14(s1,s2,s3) := -f32*s1*(5*s3*s3-1);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm15(s1,s2,s3) := f31/4*s3*(s1*s1-s2*s2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylm16(s1,s2,s3) := -f30*s1*(s1*s1-3*s2*s2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylmf:[ylm10, ylm11, ylm12, ylm13, ylm14, ylm15, ylm16];
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylmf;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+load(f90);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("temp.f90",
+    block(il:10,
+       for f in ylmf do block(ix:1,
+         for var in [s1,s2,s3] do block(
+               f90(ylms(ig,ix,il)=diff(f(s1,s2,s3),var)), ix:ix+1
+           ),
+        il: il+1)
+    )
+);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ylmf;
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

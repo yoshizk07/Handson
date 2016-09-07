@@ -1,0 +1,536 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{実行例: Cu$(001)$表面の電子状態}
+\author{東京大学 情報理工 吉本 芳英}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+この実行例ではCu$(001)$表面の電子状態を計算し、バンド図と特殊k点での波動関数
+を描画する。なおこの配布パッケージには入力例と出力例が同梱されている。
+\verb+sample/example-cu-surf+を見ること。
+
+\section{入力データの用意}
+
+この節で作成する各セクションはまとめてcu-001-1x1.cgに収納する。
+
+\subsection{原子構造データの構成}
+
+表面の計算は実際には、十分とみなせる厚みのある板（スラブモデル）の計算で行なわれる。
+これは平面波基底では、3次元の周期性を持つ原子構造のみが取扱い可能であるため
+である。
+スラブの表面は表面と裏目があるが、この例では表と裏が対称になる対称スラブモデルを
+つかう。
+
+Cu$(001)$表面の対称スラブモデルは、1原子層あたり1個のCu原子を含み
+表面方向の位置が格子単位で$(0,0)$,$(1/2,1/2)$と繰り返す積み上がった
+構造をしている。以降では$c$軸を$(001)$方向とする。
+
+この系の対称操作を列挙するのは簡単で、
+$c,a$軸、$b,c$軸および$a,b$軸を含む面に対する鏡映があり、
+さらに、$a,b$軸を入れ替える鏡映がある。
+したがって対称操作は16種類あり、これらの中に反転対称性が含まれること
+に注意すると、入力データは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# symmetry data
+&symmetry
+symmetry_format = 'reciprocal',
+has_inversion = 1,
+number_sym_op = 16
+/
+ 1  0  0  0  1  0  0  0  1   0   0   0
+-1  0  0  0  1  0  0  0  1   0   0   0
+ 1  0  0  0 -1  0  0  0  1   0   0   0
+-1  0  0  0 -1  0  0  0  1   0   0   0
+ 0  1  0  1  0  0  0  0  1   0   0   0
+ 0 -1  0  1  0  0  0  0  1   0   0   0
+ 0  1  0 -1  0  0  0  0  1   0   0   0
+ 0 -1  0 -1  0  0  0  0  1   0   0   0
+ 1  0  0  0  1  0  0  0 -1   0   0   0
+-1  0  0  0  1  0  0  0 -1   0   0   0
+ 1  0  0  0 -1  0  0  0 -1   0   0   0
+-1  0  0  0 -1  0  0  0 -1   0   0   0
+ 0  1  0  1  0  0  0  0 -1   0   0   0
+ 0 -1  0  1  0  0  0  0 -1   0   0   0
+ 0  1  0 -1  0  0  0  0 -1   0   0   0
+ 0 -1  0 -1  0  0  0  0 -1   0   0   0
+
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+
+次に原子の位置情報などを指定する。
+atom dataセクションであるが、使用する擬ポテンシャルは11価の銅原子である。
+
+ここでは$c$軸方向に40原子層分の厚みを用意して、そこに全部で29原子層の
+スラブを$z=0$を中心に正負に対称にとることにする。これは片側に14原子層であるが
+原子位置のデータは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# atom data
+ 11  29
+ 1  0.000    0.000   -0.35
+ 1  0.500    0.500   -0.325
+ 1  0.000    0.000   -0.3
+ 1  0.500    0.500   -0.275
+ 1  0.000    0.000   -0.25
+ 1  0.500    0.500   -0.225
+ 1  0.000    0.000   -0.2
+ 1  0.500    0.500   -0.175
+ 1  0.000    0.000   -0.15
+ 1  0.500    0.500   -0.125
+ 1  0.000    0.000   -0.10
+ 1  0.500    0.500   -0.075
+ 1  0.000    0.000   -0.05
+ 1  0.500    0.500   -0.025
+ 1  0.000    0.000    0.000   1
+ 1  0.500    0.500    0.025
+ 1  0.000    0.000    0.05
+ 1  0.500    0.500    0.075
+ 1  0.000    0.000    0.10
+ 1  0.500    0.500    0.125
+ 1  0.000    0.000    0.15
+ 1  0.500    0.500    0.175
+ 1  0.000    0.000    0.2
+ 1  0.500    0.500    0.225
+ 1  0.000    0.000    0.25
+ 1  0.500    0.500    0.275
+ 1  0.000    0.000    0.3
+ 1  0.500    0.500    0.325
+ 1  0.000    0.000    0.35
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+
+\subsection{サンプル$k$点データの構成}
+
+$c$軸方向の分散はないため、$6\times 6\times 1$の二次元のサンプル$k$点を構成する。
+$\Gamma$点を通らないメッシュを作る。金属の系なのでフェルミ面積分をMethfessel Paxton
+法で安定化することを指示する。
+
+サンプル$k$点関連の情報を指定するk-points dataセクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+&smpl_kpt
+dos_mode = 'METHFESSEL_PAXTON',
+dos_mesh = 12, 12, 1,
+bz_mesh = 12,
+bz_number_tile = 1
+/
+     7     7    12
+     2     2    12
+
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+
+\subsection{計算条件のセットアップ}
+
+平面波基底のカットオフエネルギーを$49$Ryに取るには、波数を$7$に取れば良い。
+また、スピンなしの計算を行うこととする。
+その他の条件を、
+\begin{itemize}
+\item 格子定数$a = 6.90772$ bohrにとる。
+\item 元素の数は1個。原子数は全部で29個。
+\item 価電子帯に必要なバンドを192本とする。
+\item SCFは120回も回せばこの場合収束するはずである。
+\item 交換相関汎関数にPBEを使う。
+\item 多めに計算の打ち切り時間を10800秒にセット。
+\item 終了時に波動関数を書き出しておく。
+\item 初期電荷を原子の電荷データから作成する。
+\item \verb+elec_kbt+にフェルミ面積分に使われる温度パラメータを0.003 a.u.と指定。
+\item SCFの収束を加速するためにトーマス・フェルミ近似によるpreconditioningを使うことを指定。
+\verb+precond_thr = 1000.0d0+でpreconditioningをSCFの収束度に関わらず常に有効とし、
+\verb+precond_beta = 0.8d0+でpreconditioningが有効な時の局所ポテンシャルの
+混合パラメータを大きめに設定する。preconditioningのカットオフは
+\verb+cutoff_precond+で指定するが、これらはトーマス・フェルミ近似が有効なのが
+フェルミ波数より小さい範囲であることを考えて指定する。
+これらパラメータの詳細は''inputformat.tex''を参照すること。
+\end{itemize}
+とすると、\verb+main data+セクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+lattice_factor = 6.90772,
+lattice_list = 0.707106781186548,  0.0,  0.0,
+               0.0,  0.707106781186548,  0.0,
+               0.0,  0.0,  20.0,
+cutoff_wave_function = 7.0,
+cutoff_local_potential = 18.1,
+cutoff_uspp_q = 18.0,
+elec_kbt = 0.003,
+number_element = 1,
+number_atom = 29,
+number_band = 192,
+initial_wfn = 0,
+store_wfn = 1,
+initial_lpt = 2,
+scf_number_iter_1st = 120,
+scf_number_iter = 120,
+xc_type = 'PBE',
+number_xtrap_stage = 4,
+control_uptime = 10800.0,
+control_q_han_win_fac = 2.0,
+precond_thr = 1000.0d0,
+precond_beta = 0.8d0,
+cutoff_precond = 2.4d0, 3.4d0, 0.0d0, 9.0d0
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+次に構造最適化を行なうために\verb+struct_opt data+セクションを以下のようにセットする。
+\vspace{5mm}\hrule
+\begin{verbatim}
+# struct_opt data
+&struct_opt
+number_cycle = 100
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+これで、デフォルトの収束条件で構造最適化が行なわれる。
+
+構造最適化のための制約条件としては、原点にある原子(15番)を固定する必要があるので
+\verb+str_opt_constr data+セクションに
+\vspace{5mm}\hrule
+\begin{verbatim}
+# str_opt_constr data
+  2
+  0.00000000000E+00  0.00000000000E+00  0.00000000000E+00
+  0.00000000000E+00  0.00000000000E+00  0.00000000000E+00
+  0.00000000000E+00  0.00000000000E+00  0.00000000000E+00
+ 1
+ 1 1
+ 15
+\end{verbatim}
+\hrule\vspace{5mm}
+としておく。
+
+\subsection{入出力ファイルの一括指定}
+
+xTAPPはいくつものファイルを作成するが、この文書ではそれらの名前を
+与えた基幹部分と既定のサフィックスの形で指定することにする。
+この場合にはfile map dataセクションを設定するのが良い。
+基幹部分を\verb+cu-001-1x1+とし、使用する擬ポテンシャルとして
+カレントディレクトリにある\verb+ps-Cu-pbe+と
+対応する初期電荷分布ファイルとして\verb+ps-Cu-pbe.ichr+をを1番目の原子種に
+使用することにした場合、
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+# file map data
+&filemap
+basename = cu-001-1x1,
+number_PP_file = 1
+/
+ps-Cu-pbe ps-Cu-pbe.ichr
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+\section{構造最適化プログラムの実行}
+
+擬ポテンシャルはxTAPP-testに付属のps-Cu-pbeを用いる。これに対応する原子電荷のデータは
+ps-Cu-pbe.ichrである。これらはPSディレクトリ以下にある。これらをあらかじめ
+カレントディレクトリにコピーしておく。
+
+まず、初期化プログラム\verb+inipot+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。同様な構造で一度動かせば良く、毎回実行する必要はない。
+
+\verb+inipot+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu-001-1x1.cg
+$ mpirun ./inipot > inipot.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで1 MPI processをつかって\verb+inipot+が動く。
+ログはinipot.logに回収している。
+実行が正常に終わるとカレントディレクトリにいくつかの中間ファイルが作成される。
+
+次に構造最適化を行うプログラム\verb+cgmrpt+を動かす。
+プログラムはカレントディレクトリにコピーしてあるものとする。
+mpirunに渡すランクファイルを6corefproc.rkfとしておく。これの例は
+xTAPP-testにあるが本質的に実行環境依存である。例えば
+バッチシステムが動いている場合には必要ないはずである。
+
+2 MPI processで計算を実行させる入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu-001-1x1.cg
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで2 MPI processをつかって\verb+cgmrpt+が動く。
+ログはcgmrpt.logに回収している。
+
+この実行においては波動関数、ローカルポテンシャル、電荷密度、結果のサマリがそれぞれ
+\vspace{5mm}\hrule
+\begin{verbatim}
+cu-001-1x1.wfn
+cu-001-1x1.lpt
+cu-001-1x1.rho
+cu-001-1x1.str
+\end{verbatim}
+\hrule\vspace{5mm}
+に保存される。これらサフィックスの詳細は''programs.tex''を参照すること。
+
+\section{仕事関数と局所ポテンシャル}
+
+仕事関数は、真空での局所ポテンシャルの値とフェルミエネルギーの値の
+差であるが、スラブモデルによる計算では真空として設定した部分での
+局所ポテンシャルの値とフェルミエネルギーとの差で計算する。
+
+このためには真空での局所ポテンシャルの値が必要であるが、
+このような目的のために$c$軸にそって$a,b$軸方向での局所ポテンシャルの
+平均、最大、最小の値を計算するプログラム\verb+lptmm+が\verb+xTAPP-util/fldtool+
+に用意されている。
+
+局所ポテンシャルが入っているファイル\verb+cu-001-1x1.lpt+から
+結果を\verb+cu-001-1x1.lpt.mm+に回収するsh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+ $ lptmm cu-001-1x1.lpt > cu-001-1x1.lpt.mm
+\end{verbatim}
+\hrule\vspace{5mm}
+である。この結果から\verb+gnuplot+で局所ポテンシャルの$z$依存性を
+表示するプログラムが\verb+cu-001-1x1.lpt.mm.gp+である。
+
+このプログラムでは横軸はスラブの中央から測った表面垂直方向の距離$z$[\AA]であり、
+縦軸はエネルギー[eV]である。\verb+max+、\verb+min+、\verb+avr+はそれぞれ
+局所ポテンシャルの面方向での最大、最小、平均値である。
+局所ポテンシャルはスラブ内部では原子のある面の位置が極小となるように振動している。
+
+ここで表示される\verb+E_f+の線と、真空での
+局所ポテンシャルの値の差が仕事関数である。
+
+また、$z=26$付近の表面最外原子層での局所ポテンシャルはスラブ内部に比べて浅くなっており、
+この深さの変化は表面から3原子層奥に入るとほぼ消えることがわかる。
+
+逆に表面外側には最外原子層から5\AA ほど外側まで局所ポテンシャルの変化が
+観察される。
+
+これらの厚みはそれぞれ計算に最小限必要なスラブの厚みと真空領域の厚みの参考値と
+なるものである。
+
+\section{バンド図と波動関数の$k$点依存性を描く}
+
+\subsection{トレースする$k$点の決定}
+
+表面のバンド図を描くために必要なトレースする特殊$k$点の位置を、逆格子を単位に
+\begin{enumerate}
+\item G (0,0,0)
+\item X (1/2, 0, 0)
+\item M (1/2, 1/2, 0)
+\item G (0,0,0)
+\end{enumerate}
+と設定し、それぞれの間の分点を
+\begin{enumerate}
+\item GX 14
+\item XM 14
+\item MG 20
+\end{enumerate}
+と設定する。また、これらトレースした$k$点の上の波動関数を\verb+cu-001-1x1.wfk+に
+出力することを指定しておく。
+
+\subsection{入力データの準備}
+
+次にバンドを計算するプログラム\verb+vbpef+が必要とするセクション\verb+trace band data+を
+作成し、構造最適化に使った入力データに付け加える。
+
+作成するデータは3区間分であるから
+\vspace{5mm}\hrule
+\begin{verbatim}
+# trace band data
+ &trace_band
+ distrib_mode = 'none',
+ output_wave_function = 1,
+ number_trace_block = 3
+ /
+   'G'  'X'  'M'  'G'
+   0.0  0.5  0.5  0.0
+   0.0  0.0  0.5  0.0
+   0.0  0.0  0.0  0.0
+      14   14   20
+\end{verbatim}
+\hrule\vspace{5mm}
+である。各列に$k$点のシンボルと位置を指定している。最後の列は区間毎の分割数である。
+これをもとのcu-001-1x1.cgに付け加えてcu-001-1x1.pefとしておく。
+
+次に\verb+main data+セクションにおいて、namelistの\verb+&tappinput+の
+\verb+initial_lpt+を1に変更して、\verb+vbpef+が構造最適化時に
+計算済みのローカルポテンシャルを読み込むように設定しておく。また\verb+store_wfn+を0に
+変更しておく。さらに、構造最適化した原子構造を引き継いで計算させるため\verb+chain_job+を
+3に設定する。
+
+\subsection{バンド計算プログラムの実行}
+
+すでに電子状態計算本体で動かして、必要なファイルを生成させてあるはずなので
+初期化プログラム\verb+inipot+を再度動かす必要はない。
+同様な構造で一度動かせば良いからである。
+
+バンド計算プログラム\verb+vbpef+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。このプログラムは収束済みのローカルポテンシャルを必要とするので
+注意すること。
+
+\verb+vbpef+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu-001-1x1.pef
+$ mpirun -np 2 -rf 6corefproc.rkf ./vbpef > vbpef.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+である。このコマンドで2 MPI processをつかって\verb+vbpef+が動く。
+ログはvbpef.logに回収している。
+
+この実行においては\verb+vbpef+の追跡したk点の固有値データは\verb+cu-001-1x1.band+に、
+そのk点の波動関数は\verb+cu-001-1x1.wfk+にそれぞれ格納される。
+これらサフィックスの詳細は''programs.tex''を参照すること。
+
+\subsection{バンド図を作成する}
+
+諏訪氏が開発したものを多少改変したバンド図作成ツールvbpef2gp-lsdaに
+よって、追跡したk点の固有値データからバンド図を描くことができる。
+Cuの場合、フェルミエネルギーを0にとってプロットしたいので、cu-001-1x1.strにある
+フェルミエネルギーを読み取ってeV単位に書き直したものを\verb+[EF]+と
+すると、vbpef2gp-lsdaの使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ vbpef2gp-lsda -fcu-001-1x1 -e[EF] ./cu-001-1x1.band
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるcu-001-1x1.bandが処理されて
+cu-001-1x1.gp、cu-001-1x1.dat、cu-001-1x1.kptが作成される。
+次にgnuplotでcu-001-1x1.gpを処理するとバンド図がgnuplotで作成される。
+
+得られるバンド図は、バルクのCuのバンドの$(001)$面への射影域を
+多数の線で塗りつぶしたものになる。この線の本数はこのスラブの厚みに
+比例している。この計算でのスラブがかなり厚いのは、射影域をはっきりさせるためである。
+
+この射影域から、孤立したバンドが2本対になって飛び出している所があるが
+これらは表面状態である。顕著なものはM点付近、dバンドのすぐ上と
+X点付近、sバンドとdバンドでできる窓の中にある。
+2本対になるのは、表面と裏面の状態が縮退するからである。
+
+\subsection{波動関数を描画する}
+
+xTAPP-util/fldtoolにあるwfk2dxによって\verb+cu-001-1x1.wfk+にある
+追跡したk点の波動関数（厳密には擬波動関数）を描画できる。ここでは
+特殊点$X$、$M$での波動関数を可視化する。
+
+描画は基本セルではなく、表面方向を$2\times 2$に拡張したセルで
+行う。また、cell periodic function, $u_{i,\mathbf{k}}(\mathbf{r})$,
+ではなくブロッホ関数, $\exp(i\mathbf{k}\cdot\mathbf{r})u_{i,\mathbf{k}}(\mathbf{r})$, の方を出力させる。こうすることで特殊点$X$、$M$での波動関数がうまく可視化できる。
+そして、この拡張したセルを48,48,640の実空間メッシュで切ることにする。
+このメッシュは\verb+cgmrpt+のログに出てくる\verb+nwx,nwy,nwz+の値を参考に
+決めている。これらの2倍が電子状態計算で波動関数に関わっているフーリエ変換の格子点数
+になっている。また、波動関数の位相はできるだけ実にとる。
+
+wfk2dxの使用方法は、$X$点(15番め)で
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ wfk2dx -p -r cu-001-1x1.wfk '2 0 0' '0 2 0' '0 0 1' '0 0 0' \
+  '48 48 640' '15 15' > cu-001-1x1.wfk.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+$M$点(29番め)で
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ wfk2dx -p -r cu-001-1x1.wfk '2 0 0' '0 2 0' '0 0 1' '0 0 0' \
+  '48 48 640' '29 29' > cu-001-1x1.wfk.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。
+これでカレントディレクトリにあるcu-001-1x1.wfkが処理されて、
+そこからOpenDXへ渡せるデータファイルが
+作成される。ファイル名は、\verb@cu-001-1x1.wfk.([0-9]+).([0-9]+).dx@の形をとっており、
+1番目の()内はバンドインデックス、2番目の()内はk点の番号である。
+このファイルの中の軌道エネルギーはeV単位である。
+
+sample/example-cu-surfにはこれを可視化するためのOpenDXのファイルが
+\verb+plotwfk.net+と\verb+plotwfk.cfg+として含まれている。
+なおこのファイルの使用には、原子位置を表示するためのモジュール群CMSPが必要である。
+このOpenDXのプログラムではVisual Program EditorのWindowsメニューから
+control panelを出すことで
+ファイルの選択、バンド番号の変更、k点の番号の変更および可視化のしきい値の変更を行なえる。
+
+M点での144、145番のバンドとX点での28、29番のバンドがそれぞれ顕著な表面状態になっているので
+観察してみるとよい。M点のものは主としてd状態由来、X点のものは主としてs状態(自由電子的状態)
+由来である。
+
+\section{STM像のシミュレーションを行なう。}
+
+STM像のシミュレーションをTersoff Harmann近似、つまり
+局所状態密度をフェルミエネルギーからバイアス電圧まで
+積分して行うプログラム\verb+vbstm+を使用する。
+
+\verb+cgmrpt+での構造最適化の結果出力される、\verb+cu-001-1x1.str+の
+中にフェルミエネルギーが原子単位系で書き込まれているので、まず
+これを把握する。次に元のcu-001-1x1.cgに以下の内容を
+付け加えてcu-001-1x1.stminとしておく。
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+# stm data
+ &stminput
+ number_bias = 2,
+ stm_fermi_energy = 0.3083167149d0
+ /
+ -1.0
+  1.0
+\end{verbatim}
+\hrule\vspace{5mm}
+
+ここでは、先ほど調べたフェルミエネルギーを\verb+stm_fermi_energy+に指定し、
+測定するサンプルを基準とするバイアス電圧を\verb+number_bias+個に設定している。
+そしてバイアス電圧の具体的な値は-1.0eVと1.0eVとに設定されている。
+
+次に\verb+main data+セクションにおいて、namelistの\verb+&tappinput+の
+\verb+initial_wfn+と\verb+initial_lpt+を1に変更して、
+\verb+vbstm+が構造最適化時に計算済みの波動関数とローカルポテンシャルを
+読み込むように設定しておく。また\verb+store_wfn+を0に
+変更しておく。さらに、構造最適化した原子構造を引き継いで計算させるため\verb+chain_job+を
+3に設定する。
+
+\verb+vbstm+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu-001-1x1.stmin
+$ mpirun -np 2 -rf 6corefproc.rkf ./vbstm >& cu-001-1x1.stm
+\end{verbatim}
+\hrule\vspace{5mm}
+
+である。このコマンドで2 MPI processをつかって\verb+vbstm+が動く。
+ログはvbstm.logに回収している。STM像の計算データは
+\verb+cu-001-1x1.stm+に出力される。このファイルから
+積分した状態密度が一定となる高さを計算する、すなわちconstant current mode
+でのSTM像の計算を行なうにはxTAPP-utilのstm2cciを使う。
+
+このプログラムには、検索する積分状態密度の値(\verb+5e-4+)と
+検索を始める高さ（メッシュ数単位、計算セルの底から測る）を
+与える必要がある。この計算セルの中央に真空領域の中央があり、ここは
+計算セルの中央から測って400格子点であることから、
+STM像の計算を行なうためのsh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ stm2cci ./vbstm cu-001-1x1.stm 5e-4 400
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このプログラムは\verb+cu-001-1x1.stm.cci+にシミュレートした画像の等高面を
+出力する。このファイルでの高さは計算セルの底(ab面)からAngstrom単位で測っている。
+このファイルの可視化には\verb+gnuplot+のpm3dを使えば良い。
+このための例が\verb+cu-001-1x1.stm.cci.gp+にある。
+
+\end{document}

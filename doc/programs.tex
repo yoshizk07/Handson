@@ -1,0 +1,1346 @@
+% $Id: programs.tex,v 1.1.2.1 2013-02-11 02:42:51 yosimoto Exp $
+%
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\newcommand{\NFCHR}{25}
+\newcommand{\NFINPUT}{10}
+\newcommand{\NFLPT}{11}
+\newcommand{\NFNSYKZ}{13}
+\newcommand{\NFNWK}{14}
+\newcommand{\NFKF}{15}
+\newcommand{\NFRHIone}{28}
+\newcommand{\NFPOTone}{34}
+\newcommand{\NFQG}{40}
+\newcommand{\NFPE}{51}
+\newcommand{\NFWFI}{95}
+\newcommand{\NFWFO}{96}
+\newcommand{\NFRSL}{99}
+\newcommand{\NFSAMPK}{21}
+\newcommand{\NFNKMKG}{22}
+\newcommand{\NFACGD}{70}
+\newcommand{\NFLMD}{71}
+\newcommand{\NFSCFD}{72}
+\newcommand{\NFPOTS}{73}
+\newcommand{\NFBSPOT}{74}
+\newcommand{\NFMDCNT}{75}
+\newcommand{\NFMDMBMT}{76}
+\newcommand{\NFUMBMT}{77}
+\newcommand{\NFSMBMT}{78}
+\newcommand{\NFMDLOG}{16}
+\newcommand{\NFMDSMPL}{17}
+\newcommand{\NFVBCHRGWAV}{18}
+\newcommand{\NFBND}{50}
+\newcommand{\NFOUT}{51}
+\newcommand{\NFROK}{57}
+\newcommand{\NFWFK}{58}
+\newcommand{\NFSTM}{80}
+\newcommand{\NFOUTwfntochg}{55}
+\newcommand{\NFOUTwfntochgTetra}{59}
+\newcommand{\NFRECIPWAN}{113}
+\newcommand{\NFAMATWAN}{150}
+\newcommand{\NFHMATRWAN}{122}
+\newcommand{\NFREALWAN}{116}
+\newcommand{\NFPOSWAN}{134}
+
+\title{プログラムの概略}
+\begin{document}
+\maketitle
+
+\section{歴史}
+
+\subsection{開発に関係した人々}
+
+xTAPPは慶應義塾大学の山内淳氏が開発してきた平面波基底第一原理計算プログ
+ラム群TAPPのversion 1.0.8から2000年ごろ吉本芳英が分岐させたものである。
+
+TAPPは、平面波基底擬ポテンシャル全エネルギー計算プログラムPPSFを基礎骨格
+として、東京大学工学部　押山淳氏のグループの東京大学 物性研究所 杉野修氏が開発し
+た共役勾配法による対角化コードを取り込んで、山内氏がultrasoft擬ポ
+テンシャルに対応させたプログラムが中心となっている。
+その経緯は、1990年頃に塚田 捷　東京大学名誉教授の下、物質・材料研究機構　大野
+隆央氏、杉野氏、東京大学工学部 渡邉聡氏、山内氏が協力して開発を開始し、
+基本設計を杉野氏、バンド計算部分、擬ポテンシャル作成部分のcodingは、それ
+ぞれ主に山内氏、渡邉氏が担当した。
+
+PPSFは、鹿児島大学 永吉秀夫氏が開発した経験的局所擬ポテンシャル計算プログ
+ラムを参考に、名古屋大学工学部 白石賢二氏が一からcodingした行列対角化による
+semilocalの非経験的擬ポテンシャル用平面波基底全エネルギー計算プログラムで、
+高度に対称性を利用した効率的アルゴリズムを特長としている。
+
+PPSF/TAPPは、主として上記のメンバーによるコードからなるが、
+当時から現在まで、東京大学 理学部 物理学科 植村、上村、塚田、青木、常行研究室
+の関係者が直接間接に大きく寄与している。
+特に、兵庫県立大 島信幸氏、千葉大学　中山隆史氏(PPSF/TAPP)、
+当時大学院生であった影島博之氏、木村栄伸氏、東北大学　赤木和人氏、東
+京理科大(当時)　諏訪雄二氏(TAPP)にはお世話になっている。
+
+xTAPP一般公開版計画には、東京大学理学系研究科 常行真司氏のご協力をいただ
+いている。2012年夏から作業が始まったxTAPP一般公開版の
+新入力形式のプログラムは常行研究室の吉澤香奈子氏によるものが
+基礎になっている。また、山内氏、日立製作所 諏訪雄二氏にも作業に加わっていただいた。
+
+\subsection{開発に関係した資金など}
+
+xTAPPには、文部科学省科学研究費補助金「新学術領域」平成22年度〜平成26年度
+コンピューティクスによる物質デザイン：複合相関と非平衡ダイナミクス、による成果が
+含まれている。
+
+\section{関係するプログラム}
+
+擬ポテンシャル作成は日立製作所 諏訪雄二氏が保守しているプログラム群psvを
+xTAPP向けに変更したものが必要であるがこのパッケージには含まれていない。
+擬ポテンシャルで原子を解くプログラムsolps、solspinはこのプログラム群に
+含まれている。
+
+\section{主な機能}
+
+\begin{itemize}
+\item 平面波基底による第一原理計算
+\item Ultrasoft pseudo-potential
+\item semi localおよびhybrid交換相関汎関数
+\item LDA(スピン偏極なし)とLSDA(スピン偏極あり)
+\item non linear core correction (partial core charge)
+\item 固有エネルギー、電荷分布、波動関数、原子に働く力、セルのストレス
+\item 構造最適化。セル固定とセル可変。
+\item エネルギー障壁。hyper plane constraint法とforce inversion法。
+\item 第一原理分子動力学（BOMD）。NVE、NPT。
+\item バンド図、軌道電荷分布の積分値
+\item total DOS、projected DOS、電荷分布の積分値のエネルギー分解
+\item $\Gamma$点計算および反転対称性がある場合の計算に対する計算の最適化
+\item OpenMPおよびMPI並列化
+\item hybrid汎関数についてはGPGPU対応
+\item OpenDX[1]での電荷密度、波動関数などの可視化
+\item 大谷、杉野によるESM[2]機能
+\item 九工大の中村による最局在ワニエ関数の計算機能。応用例は[3,4]。解説は[5]。
+\item S. GrimmeによるDFT-D計算[6,7,8]
+\item phonopy[9]を用いたスーパーセル法によるフォノンの計算。
+\item スピン軌道相互作用およびnon-collinear磁性。
+\end{itemize}
+
+\noindent [1]  http://www.opendx.org
+
+\noindent [2] M. Otani and O. Sugino, Phys. Rev. B 73, 115407 (2006)
+
+\noindent [3] K. Nakamura et al., Phys. Rev. B 74, 235113 (2006)
+
+\noindent [4] K. Nakamura et al., J. Phys. Soc. Jpn 77, 093711 (2008)
+
+\noindent [5] 中村和磨, 表面科学 29, 432-436 (2008)
+
+\noindent [6] S. Grimme et al. J. Chem. Phys, \textbf{132} 154104 (2010)
+
+\noindent [7] S. Grimme et al. J. Comput. Chem. \textbf{27} 1787-1799 (2006).
+
+\noindent [8] S. Grimme et al. J. Comput. Chem, \textbf{32} 1456-1465 (2011).
+
+\noindent [9] http://phonopy.sourceforge.net/index.html
+
+
+\section{プログラムの概略}
+
+このパッケージには以下のプログラムが含まれている。
+
+\begin{description}
+\item[inipot] 入力データから平面波基底を生成し、擬ポテンシャルを平面波基底で表現するデータを
+生成する初期化プログラムである。pefcosを除くその他のプログラムはこのプログラムで生成した初期化データを必要としており、最初に動かす必要がある。ただし、データその物は計算条件を固定すれば使いまわしできる。
+\item[cgmrpt] 構造最適化を行うプログラムである。
+\item[vbpef] cgmrptで計算したローカルポテンシャルと波動関数（hybrid汎関数の場合）で決まるハミルトニアンを固定して、逆空間上に設定する$k$点の軌跡の上で、固有エネルギー、波動関数、軌道電荷分布の空間積分値、軌道電荷分布そのものを求めるプログラムである。いわゆるバンド図のデータを生成するのはこのプログラムである。
+\item[vbstm] cgmrptで計算したローカルポテンシャルと波動関数（hybrid汎関数の場合）からSTM像のシミュレーションを局所状態密度の積分値を用いて行うプログラムである。
+\item[wfn2chg] cgmrptで計算した波動関数から、電荷分布の空間積分を固有エネルギーで分解したものやprojected DOSを計算するプログラムである。
+\item[mdrpt] 第一原理分子動力学（BOMD）を行うプログラムである。
+\item[wannier] cgmrptで計算した波動関数から、最局在ワニエ関数を計算するプログラムである。
+\item[pefcos] cgmrptで計算されているバンドのcos展開データからバンド図を生成するプログラムである。
+\item[pe2dos] cgmrptで計算されているバンドのcos展開データから状態密度を計算するプログラムである。
+\item[tetrapdos] wfn2chgが出力するファイルからprojected DOSを計算する。
+\item[xticonv] 入力ファイルの構造データを可視化ツール用に変換するツール
+\item[strconv] 構造最適化の結果ファイルを可視化ツール用に変換するツール
+\item[diffstr] 構造最適化の結果ファイルを二つ受け取って、その構造データの差分ベクトルをセル座標で出力するツール
+\item[iplstr] 構造最適化の結果ファイルを二つ受け取って、その構造データを線形補間した構造データをセル座標で出力するツール。
+\item[cmpstr] 構造最適化の結果ファイルが誤差の範囲で同一かチェックするツール
+\end{description}
+
+入力データの詳細についてはinputformat.texを参照すること。
+なお、入出力においてはとくに断らない限り原子単位系が使われる。
+
+また、プログラムの定式化についてはformalism.texを参照すること。
+
+\section{プログラムのコンパイルについて}
+
+\subsection{はじめに}
+
+コンパイルのための設定がMakefileに用意されているのはIntel環境と
+京コンピュータである。この他の環境で性能がでるようにコンパイルしたい場合には
+開発者に問い合わせるべきである。他の環境用の設定を編集して作成することは容易ではない。
+
+コンパイルにはMPIが必要である。Intel環境ではOpenMPIで開発が行われている。
+MPI-2の機能は利用していない。
+ライブラリとしてBLASとLAPACKを利用する。Intel環境ではFFTをMKLで
+実行させるべきである。京コンピュータの場合FFTWを用いるのがよい。
+
+プログラムのコンパイルはソースのあるsrcディレクトリで行う。
+
+\subsection{コンパイルのための各種設定}
+
+\begin{verbatim}
+Makefile-dist
+\end{verbatim}
+から
+\begin{verbatim}
+Makefile
+\end{verbatim}
+を生成する。また通常必要は無いが、利用目的によっては
+\verb+config.h+、\verb+config90.h+で定義されている
+最大限保持できる対称操作の数\verb+nsymq+を
+大きくする必要がある。
+
+Makefileにある、configの例を編集して必要な設定を行い、makeする。
+FFTルーチン、LAPACK、密行列対角化ルーチン、交換相互作用の計算コードなどの選択を行うこと。
+
+\subsubsection{FFT}
+\verb+FFT3D_OBJ+を選択する。FFTが使用するデータフォーマット（interleaveまたはplanar）
+に合わせて\verb+FFTGRID_H_SRC+を選択しなければならない。\verb+fftgrid-scl.h+はinterleave用、
+\verb+fftgrid-vec.h+はplanar用である。MKLとFFTWはinterleaveと組み合わせること。
+\begin{itemize}
+\item MKL用の\verb+fft3d_mkl.o+
+\item FFTW用の\verb+fft3d_fftw.o+
+\item xTAPP同梱の\verb+pfft3duz.o+など
+\end{itemize}
+
+\subsubsection{密行列対角化ルーチン}
+
+\verb+EIGSYSTM_OBJ+を選択する。
+\begin{itemize}
+\item xTAPP同梱のeigsystm.o
+\item LAPACKのeigsystm-lapack.o
+\item ScaLAPACKのeigsystm-scalapack.o
+\end{itemize}
+を選択する。最適化されたライブラリがあるならそれを使用する。intel MKLは高速である。
+
+\subsubsection{交換相互作用の計算コード}
+
+交換相互作用の計算コードにはGPGPUに対応したものが用意されている。
+Intel向けのconfigの場合、
+\begin{verbatim}
+# for NVIDIA CUDA
+...
+# for AMD GPU
+...
+# for CPU
+...
+\end{verbatim}
+となっている所からそれぞれ、NVIDIA CUDAを使う場合の設定、AMD GPUを使う場合の設定
+CPUを使う場合の設定が選択できる。またこれらに合わせて
+\verb+SCGDGOBJ+の選択も行うこと。
+
+京コンピュータ向けのconfigの場合はCPUのみ選択できる。\verb+SCGDGOBJ+の選択では
+CPUを選択すること。
+
+\subsection{MKLのLAPACK}
+
+MKLのLAPACKのライブラリのファイル名はcomposerxe-2011で
+\verb+-lmkl_lapack+から\verb+-lmkl_lapack95_lp64+に変更になっているので注意すること。
+
+\subsection{ビルド}
+
+オプションなしでmakeすると、デフォルトですべてのプログラムが作成される。
+プログラムはsrcディレクトリ中にできるので、必要であればこれを適切な場所に
+コピーして使う。
+
+\section{各プログラムの説明}
+
+\subsection{inipot}
+
+inipotは入力データから平面波基底を生成し、擬ポテンシャルを平面波基底で表
+現するデータを生成する初期化プログラムである。pefcosを除くその他のプログ
+ラムはこのプログラムで生成した初期化データを必要としており、最初に動かす
+必要がある。ただし、データその物は計算条件を固定すれば使いまわしできる。
+固定されるべき条件が固定されていない場合、自動的に後続のプログラムは停止する。
+固定されるべき条件は、
+\begin{itemize}
+\item 平面波基底の数を決めるカットオフと$\cos$展開の係数の数を決めるカットオフ。
+\item 単位胞の形状（単位胞を構造最適化している場合は基準となる単位胞。）
+\item 対称性
+\item サンプル$k$点
+\item 原子種の数と原子の数
+\end{itemize}
+である。
+
+このプログラムによって、平面波基底の数が決定される。このプログラムの入力に使った
+格子パラメータが基準となる。
+
+このプログラム群では擬ポテンシャルの動径データから擬ポテンシャルの逆空間表示を
+連続関数としてフィッティングしたものを用いるが、これをinipotは計算している。
+
+inipotは論理機番\NFINPUT から入力データを読み込む。MPI並列実行できるが、
+MPIプロセスのうち、rank 0のみが実際の処理を行い、他のプロセスは待っているだけである。
+
+inipotは擬ポテンシャルの入力データを必要とするが、一番目の擬ポテンシャルは
+論理機番\NFPOTone から二番目は論理機番\NFPOTone + 1からと言うように順に読み込まれる。
+この他、論理機番\NFRHIone から一番目の擬ポテンシャルに対応する原子電荷分布データ、
+論理機番\NFRHIone + 1から二番目の擬ポテンシャルに対応する原子電荷分布データと
+順に原子電荷分布データを順に読み込ませることもできる。ここで読んだ原子電荷分布は
+初期ローカルポテンシャルを作成する時に使用させることができる。
+
+論理機番\NFRHIone などに与えるファイルは、擬ポテンシャルを用いて原子を解くプログラム
+（solps、solspin）を用いて計算することができる。なお、このファイルにはspin偏極を
+含めることもでき、初期条件を偏極させたい場合に使用する。
+
+また論理機番\NFNSYKZ,\NFNWK,\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT に出力を行う。
+この他、論理機番\NFSAMPK にも出力を行うが後方互換性のためである。
+内部のデータは使用されていない。
+
+\subsubsection{replica実行}
+
+cgmrpt同様、replica実行に対応する。詳細はcgmrptでの説明を参照すること。
+
+\subsection{cgmrpt}
+
+cgmrptは電子状態計算を行い、必要なら構造最適化を行うプログラムである。
+
+\subsubsection{電子状態計算}
+電子状態計算は周期境界条件の元で行われる。そのため適切なサンプル$k$点を
+指定する必要がある。部分並進を含めた対称性が考慮されて既約なサンプル$k$点が選出され
+計算は既約なサンプル$k$点のみで行われる。
+
+電子状態計算はいわゆるSCFループの形式で行われる。1 SCFは固定されたハミルトニアンの
+もとでDavidson法によって実行される逐次対角化である。
+
+SCFループで自己無撞着にされるローカルポテンシャルは
+Anderson extrapolation法[1]によってその収束を加速されている。
+Anderson extrapolation法の混合パラメータは0から1までの実数で0に近いほど
+減速が強くなりSCFの不安定性を抑えられるが収束その物は遅くなる。
+
+軌道への電子の詰め方を決めるFermi面のsmearingのアルゴリズムには、cos展開、
+Methfessel-Paxton法[2,3]、Fermi関数の三種類を使える。電子系の設定温度はこのアルゴリズムの
+パラメータである。
+また、系の中性状態から追加で電子を加えたり、全スピン偏極値を固定したりできる。
+
+non-collinear計算の場合、交換相関エネルギー$E_{xc}$と
+電子密度$\rho(\mathbf{r})$、スピン密度ベクトル
+$\mathbf{m}(\mathbf{r})$の関係は、入力に\verb+noncol_spin_axis+を指定しない場合
+\[
+  E_{xc} = \int f_{xc}[\rho(\mathbf{r}),|\mathbf{m}(\mathbf{r})|] d\mathbf{r}
+\]
+であるが、
+指定する場合には対応する単位ベクトルを$\mathbf{u}$として
+\[
+  E_{xc} = \int f_{xc}[\rho(\mathbf{r}),\mathbf{u}\cdot\mathbf{m}(\mathbf{r})] d\mathbf{r}
+\]
+となる。つまり近似交換相関汎関数に渡す分極度の定義が変化する。
+後者はcollinearになる系に対して用いることが想定されている。
+交換相関汎関数にPBEを用いる場合、後者の設定にしないとSCFが収束しないことがある。
+
+
+\subsection{原子構造の最適化}
+原子構造の構造最適化は共役勾配法を用いて行われる。
+構造最適化は、原子数Nについて3N次元空間内のベクトルできまる探索方向（共役勾配方向）について
+一次元構造最適化を行う主ステップとその探索方向を更新する副ステップの二重ループで
+実行されている。
+
+構造最適化においては個別の原子ごとに固定条件を課すことができる。
+指定した系の対称性は自動的に保持される。これらは、計算した力からこれらを破る成分が
+取り除かれることで実現される。収束判定などの計算はこの処理済みの力について行っている。
+
+また、セル形状の最適化を行えるが
+この場合には、電子の運動エネルギーを修正して実質的な基底のカットオフエネルギーを
+一定に保つBTP[4]による運動エネルギー補正を使用するべきである。
+
+また構造最適化の変種として、hyper plane constraint法とforce inversion法[5]を
+用いることができる。
+
+hyper plane constraint法では、原子の動く方向は
+与えた初期構造をとおり、指定した法線ベクトルをもつ超平面の上に制約される。
+したがって同一の法線ベクトルに対して、切片を動かしながら初期構造を与えてそれぞれ構造最適化し、
+その最適化構造をつなげば、それはこの法線方向に対するエネルギー障壁を与える。
+
+一方で、force inversion法ではポテンシャルエネルギー曲面上で、エネルギー障壁の
+方向をよく近似する超空間の法線ベクトルを用意し、構造最適化で用いる力場のこの法線に
+対して平行な成分を反転してやることで、元々の力場のヘッセ行列が鞍点をとる地点を
+ヘッセ行列が極小値をとる地点に変換する。そして後は通常の構造最適化をこの力場について
+行えばポテンシャルエネルギー曲面の鞍点が求まる。
+良くない法線ベクトルや鞍点から遠い初期構造に対しては計算が不安定になるので
+ある程度hyper plane constraint法などで鞍点の場所と初期構造を絞り込まないと使えない。
+また、ポテンシャルエネルギー曲面が鞍点でなめらかな構造をもたない場合、例えば
+障壁の上で電子状態が交差する場合にはこの手法は不安定で使えない。
+
+なお、この二つの手法のためのツールとして、論理機番\NFRSL に出力される二つのサマリファイル中の
+構造データから差分ベクトルを作るツール\verb+diffstr+と、二つのサマリファイルを構造を線形に
+補間した構造データを作るツール\verb+iplstr+が付属している。
+
+また、現状のhyper plane constraint法とforce inversion法の実装ではセル構造の
+変形はサポートされていないので注意すること。
+
+\subsubsection{入出力}
+
+cgmrptは論理機番\NFINPUT から入力データを読み込む。MPI並列実行している場合
+すべてのMPIプロセスがこの入力データを読み込む。
+
+cgmrptはinipotが作成したデータを必要とし、
+論理機番\NFNSYKZ,\NFNWK,\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT から読み込む。
+これら読み込みはrank 0が担当する。\NFSAMPK からも読み込むがこれは後方互換性のためである。
+
+cgmrptは初期ローカルポテンシャルと初期波動関数を
+論理機番\NFLPT,\NFWFI からそれぞれ読み込むことができる。
+これら読み込みはrank 0が担当する。
+なお平面波基底のカットオフや波動関数のサンプル$k$点が異なっても読み込むことができる。
+また初期ローカルポテンシャルとして、イオンのローカルポテンシャルか、読み込んである
+原子の電荷分布の重ね合わせから計算したローカルポテンシャルを使うこともできる。
+読み込みを行わない場合初期波動関数はランダムに生成される。
+
+構造最適化時の原子構造、全エネルギーなどの情報はrank 0が標準出力のログに出力する。
+
+cgmrptは計算終了時にローカルポテンシャルと電荷分布を論理機番\NFLPT, \NFCHR にそれぞれ出力する。
+また論理機番\NFWFO に波動関数を書き出すことができる。このほか論理機番 \NFRSL に
+構造最適化した原子構造、全エネルギー、原子に働く力、ストレス、スピン偏極度
+など結果の要約をまとめたものを出力する。これら書き出しはrank 0が担当する。
+
+出力された電荷分布、ローカルポテンシャル、波動関数をOpenDXで読み込める形式に変換する
+プログラムはそれぞれrho2dx, lpt2dx, wfn2dxとしてxTAPP-utilに含まれている。
+
+構造最適化の計算の継続を行うために必要なデータは、論理機番\NFACGD,\NFLMD,\NFSCFD に
+rank 0から随時書き出されている。計算が時間切れとなって終了した場合、次の
+計算実行時に継続を指示すると、これらデータと
+ローカルポテンシャル、波動関数から構造最適化が継続される。
+また、構造最適化が収束したとき論理機番\NFACGD にはこの結果が書き込まれている。
+
+この他、cgmrptは\NFPE に固有エネルギーのcos展開データを記録する。この記録は
+pefcosのためのものである。
+
+\subsubsection{論理機番\NFRSL のフォーマット}
+
+\begin{verbatim}
+&struct_data
+lattice_factor = ...
+lattice_list = ...
+total_energy = ...
+stress_tensor = ...
+fermi_energy = ...
+number_element = ...
+number_atom = ...
+spin_polarization = ...
+spin_polarization_vector = ...
+abs_spin_polarization = ...
+abs_spin_polarization_vector = ...
+/
+
+# valence_charge, nucleous_charge
+  zo  zn
+  ...
+ 
+# atom_kind, atom_position by cell coordinate
+  atom_kind, pos_a, pos_b, pos_c
+   ...
+ 
+# force by Cartesian coordinate
+  force_x force_y force_z 
+  ...
+
+# orbital eigen value
+  orbital eigen value informations for each sampled k points
+  ...
+\end{verbatim}
+となっている。入力ファイルフォーマットと同じキーワードは同じ意味を持つ。
+その他のキーワードは
+\begin{description}
+\item[total\_energy] 全エネルギー$E$
+\item[stress\_tensor] ストレステンソル\[ -\frac{\partial E}{\partial\epsilon_\nu};\quad \nu は xx,yy,zz,yz,zx,xyの順 \]
+\item[fermi\_energy] フェルミエネルギー。それぞれのスピン成分ごとに個数を決めるモードがあるので二つある。
+\item[spin\_polarization] スピン偏極\[\int_\Omega \left(\rho_2(\mathbf{r}) - \rho_1(\mathbf{r}) \right) d\mathbf{r} \]
+ただしnon-collinear磁性の計算をしているときは
+\[\int_\Omega m_z(\mathbf{r}) d\mathbf{r} \]
+\item[spin\_polarization\_vector] ベクトルとしてのスピン偏極の Cartesian座標での3成分 \[\int_\Omega m_x(\mathbf{r}) d\mathbf{r}, \int_\Omega m_y(\mathbf{r}) d\mathbf{r}, \int_\Omega m_z(\mathbf{r}) d\mathbf{r} \]
+non-colliner磁性の計算をしているときのみ出力する。
+\item[abs\_spin\_polarization] 絶対スピン偏極（アンチフェロの時に値が0にならないもの。）\[\int_\Omega \left|\rho_2(\mathbf{r}) - \rho_1(\mathbf{r}) \right| d\mathbf{r} \]
+ただしnon-collinear磁性の計算をしているときは
+\[\int_\Omega \left|\mathbf{m}(\mathbf{r})\right| d\mathbf{r} \]
+\item[abs\_spin\_polarization\_vector] ベクトルとしてのスピン偏極のCartesian座標での各成分の絶対値の積分\[\int_\Omega |m_x(\mathbf{r})| d\mathbf{r}, \int_\Omega |m_y(\mathbf{r})| d\mathbf{r}, \int_\Omega |m_z(\mathbf{r})| d\mathbf{r} \]
+non-colliner磁性の計算をしているときのみ出力する。spin\_polarization\_vectorが0でも
+この値が0でないということは、偏極が空間変動しているが総和は打ち消しあって0になって
+いることを示している。
+\item[force\_x, force\_y, force\_z] 原子に働く力（デカルト座標）
+\end{description}
+である。
+
+\subsubsection{replica実行}
+
+計算機システムによっては、入力パラメータを多数用意してそれを並列実行させることが
+困難なものがある。このようなシステムで複数入力パラメータでの並列実行を行うために
+replica実行機能が用意されている。レプリカ実行を行うためには通常の入力データを
+複数用意し、cgmrpt自体にはそれらを複数並列実行するための特別な入力を与える。
+
+入力の書式は
+\begin{verbatim}
+REPLICA
+color(1) key(1)
+color(2) key(2)
+...
+color(nproc) key(nproc)
+dirprefix ifname ofname
+\end{verbatim}
+となっている。ここで\verb+color(i)+と\verb+key(i)+は、
+\verb+MPI_COMM_WORLD+でrank=iのMPI processを所属させる新しいコミュニケータのカラー番号
+と新しいコミュニケータでのrankを決めるためのキーである。詳しくは\verb+MPI_COMM_SPLIT+の
+マニュアルを参照すること。同一のカラーのrankのMPI processは同一の新しい
+コミュニケータを構成し、その中で一つの入力ファイルが実行される。
+実行される入力ファイルは、cgmrptが実行されているディレクトリ以下に、
+dirprefixに続けてカラー番号を先頭に0を補って5桁に揃えた数字をつなげた名前のディレクトリの
+中のifnameの名前のファイルである。そしてプログラムの出力はこのディレクトリの
+ofnameの名前のファイルに格納される。
+
+なお、これらのディレクトリはinipotが生成するデータファイルをそれぞれ含んでいなければならない。
+inipotもreplica実行できるので、replica実行でそれらを作成させるのが良い。
+
+例えば、
+\begin{verbatim}
+REPLICA
+0 0
+1 0
+p. si.cg cgmrpt.log
+\end{verbatim}
+の場合、rank 0とrank 1のMPI processがそれぞれディレクトリ
+\verb+p.00000+と\verb+p.00001+で
+その中の\verb+si.cg+を入力ファイルとして実行される。出力はこれらディレクトリの中の
+\verb+cgmrpt.log+に出力される。
+
+\vspace{5mm}
+\noindent[1] Donald G. Anderson, J. Assoc. Computing Machinery, 12, 547 (1965)
+
+\noindent[2] M. Methfessel and A.T. Paxton, PRB 40 (1989) 3616
+
+\noindent[3] G. Kresse and J. Furthmueller, Computational Materials Science 6 (1996) 15
+
+\noindent[4] M. Bernasconi et al., J. Phys. Chem. Solids \textbf{36} 501-505 (1995).
+
+\noindent[5] Y. Tateyama, T. Ogitu, K. Kusakabe, and S. Tsuneyuki, PRB 54, 14994 (1996).
+
+\subsection{vbpefとpefocs}
+
+vbpefはcgmrptで計算したローカルポテンシャルと波動関数（hybrid汎関数の場合）で決
+まるハミルトニアンを固定して、逆空間上に設定する$k$点の軌跡の上で、固有エ
+ネルギー、波動関数、軌道電荷分布の空間積分値、軌道電荷分布そのものを求め
+るプログラムである。いわゆるバンド図のデータを生成するのはこのプログラム
+である。
+
+一方でpefcosはバンド図のデータだけをcgmrptで計算した固有エネルギーの
+cos展開から計算するプログラムである。そのためcos展開の対象となったバンドの
+範囲だけ計算できる。
+
+$k$点の軌跡は複数区間のつながった線分で設定する。また軌道電荷分布の積分は指示した
+点を中心とする球状、またはセルの軸に平行になる平板状のいずれかで行える。
+
+計算したバンドの固有エネルギーデータは論理機番\NFBND に出力される。これをxTAPP-utilの
+vbpef2gp-lsdaで処理するとバンド図を描ける。
+
+計算した軌道電荷の積分データは論理機番\NFOUT に出力される。
+このファイルのフォーマットはこの文書のファイルフォーマットの節にある。
+計算した$k$点の波動関数データは\NFWFK, 計算した軌道電荷データは\NFROK にそれぞれ出力される。
+xTAPP-util中のwfk2dxおよびrok2dxで\NFWFK および\NFROK を
+OpenDX向きのデータ形式に変更できる。
+
+vbpefはinipotが作成したデータを必要とし、
+論理機番\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT から読み込む。
+これら読み込みはrank 0が担当する。
+
+vbpefにcgmrptで構造最適化した結果を引き継ぎたい場合、\verb+chain_calc=3+と
+セットする。論理機番\NFACGD からcgmrptが構造最適化した結果が読み込まれる。
+
+TAPPにあったvbwfnの機能はvbpefに統合されているので、必要ならこちらを使うこと。
+
+\subsection{vbstm}
+
+cgmrptで計算したローカルポテンシャルと波動関数（hybrid汎関数の場合）から
+STM像のシミュレーションを局所状態密度をフェルミエネルギーからバイアス電圧まで
+積分して行うプログラムである。つまりTersoff Harmann近似[1]での計算を行なう。
+
+フェルミエネルギーは、入力として与えなければならない。
+
+計算したSTM像は論理機番\NFSTM に出力される。この出力ファイルをOpenDXで読み込める
+形式に変換するプログラムstm2dxがxTAPP-utilに入っている。
+
+mdrptはinipotが作成したデータを必要とし、
+論理機番\NFNSYKZ,\NFNWK,\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT から読み込む。
+これら読み込みはrank 0が担当する。\NFSAMPK からも読み込むがこれは後方互換性のためである。
+
+vbpefにcgmrptで構造最適化した結果を引き継ぎたい場合、\verb+chain_calc=3+と
+セットする。論理機番\NFACGD からcgmrptが構造最適化した結果が読み込まれる。
+
+\vspace{5mm}
+\noindent [1] J. Tersoff and D.R. Hamann, Phys. Rev. Lett. \textbf{50} 1998--2001 (1983); Phys. Rev. B \texttt{31} 805--813 (1985)
+
+
+\subsection{wfn2chg}
+
+cgmrptで計算した波動関数から、電荷分布の空間積分を固有エネルギーで分解し
+たものやprojected DOSを計算するプログラムである。
+
+このプログラムは実際にMPI並列動作するものではないがmpirunで起動する必要はある。
+
+電荷分布の空間積分は指示した点を中心とする球状、
+またはセルの軸に平行になる平板状のいずれかで行える。
+
+projected DOSの計算は、原子の動径波動関数に対するものと最局在Wannier関数に対するものの
+2種類を計算できる。
+
+原子の動径波動関数は論理機番\NFVBCHRGWAV から読み込む。
+このファイルは
+\begin{verbatim}
+  nsmpl  wavil
+  r(1)  wav(1)
+  r(2)  wav(2)
+  ...
+  r(nsmpl)  wav(nsmpl)
+\end{verbatim}
+の形式のもので、主量子数$n$、軌道角運動量$l$の動径波動関数を$R(n,l;r)$とするとき、
+1からnsmplまでのログメッシュ\verb+r(1:nsmpl)+=$r$上の角運動量\verb+wavil+$= l+1$、
+の動径波動関数\verb+wav(1:nsmpl)+=$rR(n,l;r)$を指定するものである。
+これは擬ポテンシャルで原子を解くプログラム（solps）で作ることができる。
+
+この動径波動関数を置く位置は、計算上原子がある位置を原子の番号で指定するか
+置く位置をセル座標で指定するかで決める。ただし、計算上原子のない位置に指定する場合でかつ
+読む込む動径波動関数がUltrasoft擬ポテンシャルによるもので
+ノルムが保存していない場合、得られるprojected DOSの
+全エネルギーでの積分は1にならないので解釈に注意が必要である。例えば電荷の量として
+解釈することはできない。環境の違いによる値の比には意味があるであろう。
+
+最局在Wannier関数に対するprojected DOSを計算する場合、対象の電子状態を計算する
+$k$点メッシュと最局在Wannier関数を計算する$k$点メッシュは同一でなければならないが、
+両者を計算する原子構造そのものが同一である必要性はない。
+
+計算した積分値やprojected DOSは論理機番\NFOUTwfntochg に出力される。このデータを処理して
+エネルギーの関数としてのグラフを描くプログラムがxTAPP-utilにあり、積分値用がwfchg2pdos、
+projected DOS用がltzpdosである。これらのプログラムは今のところ、これらに与える
+ローレンチアンとの畳み込みによってエネルギー依存性の計算を行っている。
+なお、ltzpdosの出力にはtotal DOSも含まれている。
+
+projected DOSの計算を行なっている場合には、
+計算に用いているk点メッシュが$\Gamma$点を
+含む単一のメッシュである場合、論理機番\NFOUTwfntochg に加えて論理機番\NFOUTwfntochgTetra に
+四面体法によるprojected DOSの計算を行なうためのデータが格納される。
+このデータはこの文書で説明されているツール、tetrapdosで処理することで
+エネルギーの関数としてのグラフのデータに変換できる。なお、tetrapdosの出力は
+ltzpdosと互換性がある。
+
+原子軌道へのprojected DOSの角運動量は\verb+wavil = 3+( $l=2; d$軌道 )まで指定可能である。
+また出力における磁気角運動量の並び順はカーテシアン座標を用いて、$p$軌道の場合
+\[y, z, x\]
+$d$軌道の場合、
+\[xy,yz,3z^2-1,zx,x^2-y^2\]
+の順となっている。
+
+また、cgmrptで計算した$k$点の軌道電荷を出力させることも出来、これは論理機番
+\NFROK に出力される。このファイルはvbpefと同様にxTAPP-utilのrok2dxでOpenDX用の
+フォーマットに変換できる。
+
+wfh2chgはinipotが作成したデータを必要とし、
+論理機番\NFNSYKZ,\NFNWK,\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT から読み込む。
+\NFSAMPK からも読み込むがこれは後方互換性のためである。
+
+\subsection{mdrpt}
+mdrptは第一原理分子動力学（BOMD）を行うプログラムである。
+mdrptはcgmrptと同様の電子状態計算を行って原子に働く力を計算する。
+
+速度ベルレ法によるNVEアンサンブル、速度ベルレ法とBerendsen thermostatの組み合わせによる
+NVTアンサンブル、およびSternのアルゴリズム[1]によるNPTアンサンブルが
+扱える。なお、このNPTアンサンブルでは
+barostatが止まるパラメータを設定することでNVTアンサンブルにすることもできる。
+
+分子動力学の原子位置などの記録は、論理機番\NFMDLOG にバイナリで出力される。
+出力はrank 0が行う。
+このファイルを読み取ってアスキー形式で出力するプログラムscanmdlogがxTAPP-utilに入っている。
+
+初速度は設定することもできるが、設定温度に合うようなランダムな初速を与えることもできる。
+
+MDステップ毎に波動関数とローカルポテンシャルを次のステップに補外させて
+収束を加速することができる。[2,3]
+
+mdrptはinipotが作成したデータを必要とし、
+論理機番\NFNSYKZ,\NFNWK,\NFKF,\NFQG,\NFNKMKG,\NFPOTS,\NFBSPOT から読み込む。
+これら読み込みはrank 0が担当する。\NFSAMPK からも読み込むがこれは後方互換性のためである。
+
+mdrptは初期ローカルポテンシャルと初期波動関数を
+論理機番\NFLPT,\NFWFI からそれぞれ読み込むことができる。
+これら読み込みはrank 0が担当する。
+なお平面波基底のカットオフや波動関数のサンプル$k$点が異なっても読み込むことができる。
+また初期ローカルポテンシャルとして、イオンのローカルポテンシャルか、読み込んである
+原子の電荷分布の重ね合わせから計算したローカルポテンシャルを使うこともできる。
+読み込みを行わない場合初期波動関数はランダムに生成される。
+
+mdrptは計算終了時にローカルポテンシャルと電荷分布を論理機番\NFLPT, \NFCHR 
+にそれぞれ出力する。
+また論理機番\NFWFO に波動関数を書き出すことができる。これら書き出しはrank 0が担当する。
+
+分子動力学が設定ステップまで進まずに終了した場合、論理機番\NFMDCNT に継続実行のための
+データがrank 0によって書き出される。次の実行で継続を指示するとこのこのデータがrank 0から
+読み取られて継続実行が始まる。この際、ローカルポテンシャルと波動関数の読み込みも
+同時に必要である。
+
+\vspace{5mm}
+\noindent [1] H.A. Stern, J. Compt. Chem, Vol. 25, No. 5, 749-761 (2004)
+
+\noindent [2] T.A. Arias, M.C. Payne, J.D. Joannopoulos, Phys. Rev. B 45 (1992) 1538
+
+\noindent [3] Dario Alfe, Comp. Phys. Comm., 118 (1999) 31
+
+\subsection{wannier}
+
+cgmrptで計算した波動関数から、最局在ワニエ関数[1,2]を計算するプログラムである。
+
+このプログラムは実際にMPI並列動作するものではないがmpirunで起動する必要はある。
+
+このプログラムには二つのモードがある。一つは逆空間での
+ワニエ関数の計算を行なうモード\verb+generate_rcp+、もう一つは計算済みの逆空間での
+ワニエ関数の実空間表現を計算するモード\verb+recp_to_real+である。
+
+このプログラムを使う場合、計算セルの形状のとり方に制限ができるので
+注意すること。またその形状がなにであるのかを別途指定する必要もある。
+他に、計算に使用したサンプルk点メッシュはは$\Gamma$点を含み、
+対称性を満たす単一の格子でなければならない。
+
+\verb+generate_rcp+モードでは、
+論理機番\NFRECIPWAN に逆空間表現のワニエ関数データ、
+論理機番\NFAMATWAN にワニエ関数をブロッホ関数から構成する際の変換行列、
+論理機番\NFHMATRWAN にワニエ関数によってハミルトニアンの係数を計算したもの、
+論理機番\NFPOSWAN にワニエ関数の実空間での中心位置がカーテシアン座標で、
+それぞれ書き込まれる。
+
+\verb+recp_to_real+モードでは、
+論理機番\NFRECIPWAN からあらかじめ計算した逆空間表現のワニエ関数データが読み込まれ、
+論理機番\NFREALWAN にワニエ関数の実空間表現のデータが書き込まれる。
+
+論理機番\NFRECIPWAN には$j$番めのワニエ関数$w_j(\mathbf{r})$を
+\[
+w_j(\mathbf{r}) = \frac{1}{N_k\sqrt{\Omega}}\sum_{\mathbf{k},\mathbf{G}} \exp(i\mathbf{k}\cdot\mathbf{r}) w_{\mathbf{k},j}(\mathbf{G})\exp(i\mathbf{G}\cdot\mathbf{r})
+\]
+と構成するときの$w_{\mathbf{k},j}(\mathbf{G})$が格納されている。
+この規格化は、
+\[
+ \sum_\mathbf{G} \left|w_{\mathbf{k},j}(\mathbf{G})\right|^2 = 1
+\]
+となっている。これは
+\[
+\int d\mathbf{r} \left|w_j(\mathbf{r})\right|^2 = 1
+\]
+に対応している。
+
+論理機番\NFAMATWAN にはこのワニエ関数$w_{\mathbf{k},j}(\mathbf{G})$を
+ブロッホ関数$\phi_{\mathbf{k},n}(\mathbf{G})$から構成する際の変換行列
+$A_{n,j}(\mathbf{k})$が格納される。ここで
+\[
+ w_{\mathbf{k},j}(\mathbf{G}) = \sum_{n}\phi_{\mathbf{k},n}(\mathbf{G})A_{n,j}(\mathbf{k})
+\]
+である。格納時の添字の順番は内側から$j,n,\mathbf{k}$となっている。また可約k点すべてに
+ついて出力されている。出力するk点の順は標準出力に出てくる可約k点のリストの順である。
+
+論理機番\NFREALWAN へのワニエ関数$w_j(\mathbf{r})$の$\mathbf{r}$の範囲は、
+$\mathbf{a},\mathbf{b},\mathbf{c}$軸単位で$-1$から$1$までである。
+ファイルの書式はxTAPPの電荷密度ファイルと同一である。(スピン成分は一つ)。
+可視化する際にはxTAPP-utilのrho2dxないしrho2xsfを用いること。
+
+ワニエ関数によって内挿されたバンド分散を計算する場合、付属のツールhmatr2bndを
+用いる。使用方法はほとんどpefcosやvbpefと同じであるが論理機番\NFHMATRWAN に
+出力されているハミルトニアンを使う点が異なる。また計算の対象となるバンドは
+ワニエ関数を計算したバンドに固定され、バンドの指定はできない。
+
+自発分極の計算のため、分極のうちイオンによる成分\verb+Ionic polarization+と、
+求めたワニエ関数の中心位置の総和\verb+Sum of the Wannier center+が
+それぞれデカルト座標で標準出力に出力されている。すべての占有状態についてワニエ関数を
+計算している場合、ワニエ関数の中心位置の総和は分極のうち計算している
+スピン方向の電子による成分となる。
+\verb+Sum of the Wannier center+は二種類（optimizedとinvariant）に
+分かれているが、optimizedは [1]で定義される最局在ワニエ関数の計算に伴う定義によるもの、
+invariantはワニエ関数のゲージに依存しないものである[3]。invariant, alignedとあるものは
+格子ベクトル分の不定性をoptimizedにほぼ一致するように補正してあるものである。
+最局在ワニエ関数を収束させなくても同一の値になる点で、分極の計算にはinvariantを使うのが良い。
+なお、うまくワニエ関数の初期値がとってある場合\verb+Ionic polarization+と
+optimizedから単純な引き算で分極が計算できるはずであるので、これにそろっている
+invariant, optmizedが最適な選択のはずである。
+
+このプログラムはウルトラソフト擬ポテンシャルに対応するが、その方式は参考文献[4]によっている。
+
+\vspace{5mm}
+\noindent [1] N. Marzari and D. Vanderbilt, Phys. Rev. B 56, 12847 (1997)
+
+\noindent [2] I. Souza, N. Marzari, and D. Vanderbilt, Phys. Rev. B 65, 035109 (2001)
+
+\noindent [3] R. D. King-Smith and D. Vanderbilt, Phys. Rev. B 47, 1651 (1993)
+
+\noindent [4] A. Ferretti, A. Calzolari, B. Bonferroni and R. Di Felice, J. Phys: Condens. Matter 19, 036215 (2007)
+
+\subsection{pe2dos}
+
+pe2dosは状態密度をcgmrptで計算した固有エネルギーの
+cos展開から計算するプログラムである。そのためcos展開の対象となったバンドの
+範囲だけが計算の対象となる。
+
+\begin{verbatim}
+$ pe2dos fname ndx ndy ndz nsmpl mode
+\end{verbatim}
+
+で起動する。ここでfnameはcgmrptが出力した論理機番\NFPE のファイルである。
+ndx, ndy, ndzはブリュアンゾーンのメッシュ生成に用いる分割数であり、
+a,b,c軸がそれぞれこの2倍で分割される。状態密度はメッシュ上のエネルギーの
+最小値から最大値までをnsmpl等分したサンプル点で計算される。
+modeには0または1を指定し、0の場合、出力はそのエネルギーまでの状態数
+（つまり状態密度の積分値）となり、
+1の場合、出力はそのエネルギーでの状態密度となる。
+
+標準出力に出力される結果はすべて原子単位系を用いている。
+
+\subsection{tetrapdos}
+
+tetrapdosはprojected DOSをwfn2chgが論理機番\NFOUTwfntochgTetra に出力する
+データから四面体法を用いて計算するプログラムである。wfn2chgはサンプルk点が
+単一のGamma点を含む格子をなしているときにのみ、\NFOUTwfntochgTetra に
+このデータを出力する。
+
+\begin{verbatim}
+$ tetrapdos fname nsmpl mode
+\end{verbatim}
+
+で起動する。ここでfnameはwfn2chgが出力した論理機番\NFOUTwfntochgTetra
+のファイルである。
+projeced DOSは計算の対象となった軌道エネルギーの
+最小値から最大値までをnsmpl等分したサンプル点で計算される。
+modeには0または1を指定し、0の場合、出力はそのエネルギーまでの状態数
+（つまり状態密度の積分値）となり、
+1の場合、出力はそのエネルギーでのprojected DOSとなる。
+
+標準出力に出力される結果はすべて原子単位系を用いている。
+この出力の書式はxTAPP-utilのltzpdosと同様である。
+出力データの行のフォーマットは、LDAなら
+\begin{verbatim}
+  eng, tdos, (pdos(im),im=1,nwav)
+\end{verbatim}
+LSDAなら
+\begin{verbatim}
+  eng, tdos(1), (pdos(im,1),im=1,nwav), (pdos(im,2),im=1,nwav)
+\end{verbatim}
+である。ここでnwavは計算の対象となった軌道の数、engはエネルギー、tdosはtotal DOS、
+pdosは各軌道ごとのprojected DOS。(1),(2)はスピンの番号。
+pdos, tdosともに\verb+[states/a.u.]+である。
+
+原子軌道に対するprojected DOSの場合、nwav = 2*wavil-1である。
+この場合、各軌道はカーテシアン座標で実数化された磁気角運動量に対応するものであり、その並びは
+wavil=2 (p) なら、y,z,x成分であり、wavil=3 (d) なら、xy,yz,3*z*z-1,zx,x*x-y*y成分である。
+
+一方で、Wannier関数に対するprojected DOSの場合、nwavは計算したWannier関数の数である。
+
+\subsection{xticonv}
+
+xticonvは入力ファイルの中の原子構造データを可視化ツールのために変換するプログラムである。
+対応フォーマットはCIF(\verb+http://www.iucr.org/resources/cif+)とXYZである。
+プログラムは
+\begin{verbatim}
+$ xticonv [fmt] [file name]
+\end{verbatim}
+として起動する。ここで[fmt]は
+\begin{description}
+\item[cif:] CIF形式
+\item[xyz:] XYZ形式
+\item[xyzpr:] XYZ形式であるが、セルの境界付近(セルの各周期の方向に0.1 a.u.まで)
+に位置する原子を重複して出力
+\item[xyzmol:] XYZ形式であるが、セルの周期性を使って1番目の原子にできるだけ他の
+原子の位置を近づけて出力。孤立分子系の出力用。
+\item[poscar:] VASPのPOSCAR形式。第一行には使用している原子種が書き込まれる。
+\end{description}
+であり、[file name]は変換したい入力ファイル名である。
+変換結果は標準出力に出てくる。
+
+\subsection{strconv}
+
+strconvはcgmrptが論理機番\NFRSL に出力する構造最適化した原子構造を
+可視化ツールのために変換するプログラムである。
+対応フォーマットはCIF(\verb+http://www.iucr.org/resources/cif+)とXYZである。
+プログラムは
+\begin{verbatim}
+$ strconv [fmt] [file name]
+\end{verbatim}
+として起動する。ここで[fmt]は
+\begin{description}
+\item[cif:] CIF形式
+\item[xyz:] XYZ形式
+\item[xyzpr:] XYZ形式であるが、セルの境界付近(セルの各周期の方向に0.1 a.u.まで)
+に位置する原子を重複して出力
+\item[xyzmol:] XYZ形式であるが、セルの周期性を使って1番目の原子にできるだけ他の
+原子の位置を近づけて出力。孤立分子系の出力用。
+\item[poscar:] VASPのPOSCAR形式。第一行には使用している原子種が書き込まれる。
+\item[cforce:] 原子に働く力を入力ファイルでの原子の並び順にデカルト座標、原子単位系で出力する。
+\verb+phonopy+と組み合わせるときなどに使う。
+\end{description}
+であり、[file name]は変換したい入力ファイル名である。
+変換結果は標準出力に出てくる。
+
+\subsection{diffstr}
+
+diffstrはcgmrptが論理機番\NFRSL に出力する構造最適化した原子構造を二つ
+受け取って、その構造データの差分ベクトルをセル座標で出力するツールである。
+差分ベクトルは周期性を考慮して、セル座標の差分の絶対値ノルムが最小になるように
+とられる。
+
+\begin{verbatim}
+$ diffstr [file name 1] [file name 2]
+\end{verbatim}
+として起動する。差分は$2 - 1$として計算される。
+結果は標準出力に出てくる。
+
+\subsection{iplstr}
+
+iplstrはcgmrptが論理機番\NFRSL に出力する構造最適化した原子構造を二つ
+受け取って、その構造データを線形に補間した構造データをセル座標で出力するツールである。
+
+\begin{verbatim}
+$ iplstr [file name 1] [file name 2] tipl
+\end{verbatim}
+として起動する。補間は$ 1 + \texttt{tipl}*(2 - 1)$として計算される。
+なお、差分の部分は周期性を考慮して、セル座標の差分の絶対値ノルムが最小になるように
+とられる。結果は標準出力に出てくる。
+
+\subsection{cmpstr}
+
+cmpstrはcgmrptが論理機番\NFRSL に出力する構造最適化した原子構造を二つ
+受け取って、それらが誤差の範囲で同一であるかチェックするツールである。
+これは、プログラム開発時の動作チェックのために使用する。
+
+\begin{verbatim}
+$ cmpstr [file name 1] [file name 2]
+\end{verbatim}
+として起動すると、変化があれば終了状態が0でなくなり標準出力に変化の内容について出力する。
+\begin{verbatim}
+$ cmpstr
+\end{verbatim}
+として起動すると、誤差として認める範囲を標準出力に出力する。
+
+\section{ESM機能}
+
+大谷、杉野による有効遮蔽体法（ESM法）を使用することができる。
+
+この機能を利用する場合、標準の入力に加えてESMのための入力ファイル
+\verb+esmprm.dat+を用意する。このファイルがプログラムのカレントディレクトリに
+存在することでESM機能が有効になる。このファイルはすべてのMPI processから
+読み込まれる。
+
+ESM機能を使う場合、計算セルはESMを適用している軸が他の軸に直交するように
+取らなければならない。
+
+\verb+esmprm.dat+については、\verb+inputformat.tex+を参照せよ。
+
+\section{擬ポテンシャル}
+
+TAPP-1.0.8で用いられていた形式の擬ポテンシャルのフォーマットを用いるがヘッダは
+異なっており、
+\begin{verbatim}
+#xPSV-1
+# ATOM NAME: {atom_name}
+# {comment}
+# ...
+xcname
+zo zn
+...
+\end{verbatim}
+で始まるようになっている。ここで\verb+{atom_name}+は原子名を表す文字列、
+\verb+{comment}+はその他のコメントである。\verb+{atom_name}+はログ中で
+出力される。\verb+xcname+は交換相関ポテンシャルのタイプを表す。
+\verb+zo+はこの擬ポテンシャルのイオンの価数であり、\verb+zo+はこの擬ポテンシャルの
+原子番号である。なお、\verb+zn+は省略可能である。元々のフォーマットでは\verb+zn+は
+存在していない。
+
+TAPP-3.0系列のフォーマットとTAPP-1.0.8のフォーマットではinitial spinのデータが
+増設された違いがある。このデータはxTAPPでは使えないので削除する必要がある。
+
+\section{原子の電荷分布}
+
+\NFRHIone から始まる論理機番から入力する原子電荷分布は
+\begin{verbatim}
+nsmpl
+r(1) rho1(1) rho2(1)
+r(2) rho1(2) rho2(2)
+...
+r(nsmpl) rho1(nsmpl) rho2(nsmpl)
+\end{verbatim}
+の書式で与える。ここで\verb+nsmpl+は動径のログメッシュの数であり、
+\verb+r+はログメッシュ、\verb+rho1+、\verb+rho2+は電荷の動径分布である。
+\verb+rho2+がない場合にはスピン偏極なし、ある場合にはスピン偏極ありとして
+扱われそれぞれ成分1、2となる。
+このデータはsolpsかsolspinを用いて計算することができる。
+
+\section{ログの見かたについて}
+
+\subsection{実行条件の確認}
+
+ログの先頭部分には入力ファイル形式と同じ形式で\verb+BEGIN INPUT+から
+\verb+END INPUT+まで実行に使われたパラメータが出力されている。入力で省略したもの
+にプログラムが当てはめた値もここで確認できる。
+
+\subsection{SCFの収束の確認}
+
+SCFの収束はログの\verb+SQUARE ERROR =+で確認する。この定義はデフォルトでは
+\[
+ \sum_\sigma\frac{1}{\Omega} \int_{\Omega} |V_{\sigma,new}(r) - V_{\sigma,old}(r)|^2 dr
+ = \sum_{\sigma,G} ( \frac{1}{\Omega} |V_{\sigma,new}(G) - V_{\sigma,old}(G)| )^2
+\]
+である。この定義は収束度がシステムサイズに依存しにくくなるので良い。
+
+しかし、TAPP-3.0との互換性を指定している場合は、これをさらに\verb+2*nvxyz+で割ったものが
+定義となる。ここで\verb+nvxyz+はローカルポテンシャルの逆空間での全メッシュ数である。
+
+なお、この収束の定義では非占有状態の収束の度合いを知ることは出来ない。
+このためのちの計算の都合で非占有状態を収束させたいときには別途
+\verb+IKS, EIGEN, RESID, SIN, EPS+を調べる必要がある。
+これはSCF一回につき、一塊のログが$k$点の数だけ出るものであるが、\verb+EIGEN+が
+一回前のSCFとの固有値の変化の絶対値を表している。これが十分に小さくなるようにしなければ
+ならない。なお、非占有状態を収束させるためにはSCFを回すことではなく対角化ルーチンを
+回すことが必要である。そのため非占有状態を特に収束させたいときには
+\verb+SQUARE ERROR =+が十分に小さくなった状態で\verb+davidson_number_diag+を
+大きめに取って対角化を十分に行わせれば良い。
+
+なお、\verb+number_density+ = 4で計算している場合、すなわち
+ノンコリニアで計算している場合、\verb+SQUARE ERROR+の定義は
+\[
+ \sum_{\nu=0}^3\frac{1}{\Omega} \int_{\Omega} |V_{\nu}(r) - V_{\nu,old}(r)|^2 dr
+ = \sum_{\nu,G} ( \frac{1}{\Omega} |V_{\nu,new}(G) - V_{\nu,old}(G)| )^2
+\]
+と拡張される。ここで$\nu = 0$は電荷密度、$\nu=1,2,3$はスピン密度に対応する。
+
+\subsection{全エネルギー}
+
+SCFの収束の過程で出力される\verb+ETEIG+はバンドエネルギーから簡易に計算した
+変分量になっていない全エネルギーである。ただしhybrid計算の場合にはこの計算が
+低コストでできないため正しく行っていない。\verb+ETEIG+は力の計算が終わった後に
+出力される変分量になっている全エネルギー''\verb+TOTAL     ENERGY+''に
+近い値になるものである。
+
+\subsection{構造最適化と力の残差}
+
+構造最適化の過程で収束を見るには\verb+MAX FORCE+を調べれば良い。
+これは原子に働く力のうち最大のもの[hartree/bohr]である。
+セル形状を最適化している場合、これに加えて\verb+MAX STRESS+を調べる。
+これは、
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu} - p_{ext}V\right) \textrm{;\quad for\quad} \nu = xx,yy,zz
+\]
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu}\right) \textrm{;\quad for\quad} \nu = yz,zx,xy
+\]
+の最大である。
+
+\subsection{実行プロファイルの確認}
+
+SCFが終了する時と、力の計算が終了するときにそこまでの実行プロファイルが
+\verb+profile: time count+に続いて出力される。最初の数字が経過時間の合計、
+次の数字が実行回数である。
+
+\subsection{全サンプル$k$点数とサンプル$k$点の位置の確認}
+
+\verb+inipot+が全サンプル$k$点を決定している。このログのうち\verb+NI=+で
+現れているのが全サンプル$k$点の数である。なおこの数は設定した$k$点メッシュより
+多くなることがある。これは設定した$k$点メッシュに対称性でつながっている$k$点も数えるためである。
+また、この\verb+NI=+の直後にサンプル$k$点の番号とその位置の対応が一行に
+2セットずつ出ている。1セットの数字のうちもっとも右側のものは、サンプルした$k$点が
+対称操作を有効活用する割合を示しており$1$が最大である。位置は逆格子の基本ベクトル単位で
+表示されている。
+
+\subsection{平面波基底の数の確認}
+\verb+inipot+のログにサンプル$k$点の番号ごとの平面波基底の数が\verb+iks, nkm =+
+で記録されている。
+
+\subsection{各種メッシュ}
+\begin{description}
+\item[電荷分布:] \verb+inipot+のログに\verb+NRX, NRY, NRZ+で現れている。それぞれの
+2倍が実際に使われるメッシュ数である。\verb+NRXYZ+は総メッシュ数である。
+\item[波動関数の実空間メッシュ:] \verb+inipot+のログに\verb+nwx, nwy, nwz+で現れている。
+それぞれの2倍が実際に使われるメッシュ数である。
+\end{description}
+
+\section{プログラムの運用について}
+
+\subsection{セルの取り方}
+
+フーリエ変換メッシュとセルの対称性が矛盾しない必要性がある。
+このため、セルの$a,b,c$軸は対称性よくとる必要があり、そうでない場合には
+実行初期にエラーになる。
+body centerd tetragonalのケースではセルの取り方が悪いと実際にエラーになる。
+
+\subsection{原子のスピン偏極の初期条件の設定}
+
+antiferroとなる系の場合など、初期スピン電荷密度を目的の秩序状態に初期化したくなる
+場合がある。この目的で、ある原子の初期電荷密度を上向きと下向きの反対に偏極した二種類に
+わけて設定したい場合、対応は二つある。
+\begin{enumerate}
+ \item \verb+# initial charge+セクションを使う。
+このセクションで初期スピン電荷の偏極の向きを原子ごとに反転できる。
+詳細は\verb+inputformat.tex+を見ること。
+
+ 原子のスピン電荷密度を必要に応じて反転しながら初期電荷をつくることができる。
+ \item これらスピンの極性が異なる原子に入力上、異なる原子種の番号を割り当てたうえで
+擬ポテンシャル本体は共通、\NFRHIone から始まる論理機番から入力する原子の電荷分布データ
+はそれぞれ反対向きに偏極したものとすれば良い。
+\end{enumerate}
+いずれの場合でも、原子の電荷分布データから初期ローカルポテンシャルを生成させるために
+入力ファイルのnamelist \verb+&tappinput+において\verb+initial_lpt+を
+2にセットすることを忘れないこと。
+
+\subsection{スピン軌道相互作用、non-collinear磁性の計算}
+
+namelist \verb+tappinput+において
+\verb+number_component = 2+と設定することでスピン軌道相互作用の
+計算機能が有効になる。この際スピン軌道相互作用を含む擬ポテンシャルを
+使う必要がある。これを指定するとプログラムは2成分波動関数(Pauli方程式)
+を扱うようになる。
+
+入力で指定するバンドの本数は各バンドにそれぞれ1個の電子が収容されるものとして
+与えること。つまり通常に比べて2倍のバンド数が必要になる。
+この様にバンドの本数が2倍必要となり波動関数の基底の数が2倍になるので、
+必要計算量は通常の8倍になり、必要メモリ量は通常の4倍になる。
+
+またデフォルトでは時間反転対称性が仮定されて
+磁性は現れない。non-collinear磁性の計算をするには加えて
+\verb+number_density = 4+と設定する。
+このように設定すると時間反転対称性が仮定されなくなり、ゼロではないスピンベクトル密度
+での計算ができるようになる。
+
+一般化勾配近似(GGA)を交換相関汎関数に用いている場合、\verb+number_density = 4+では
+SCFが収束しないことがある。この場合で計算結果が実はcollinearになる
+ケースの場合、\verb+noncol_spin_axis+をこの分極方向に設定すると
+収束することがある。
+
+non-collinear計算の場合、初期スピン電荷密度を指定して計算を始める必要があるが、
+このためには\verb+# initial charge+セクションを使う。
+このセクションのnamelist \verb+initial_charge+に
+\verb+mode = 'direct_atomic_charge'+
+を指定すると、スピン分極の向きを含めて初期電荷密度の設定ができる。
+詳細は\verb+inputformat.tex+を見ること。
+また、この初期電荷密度から初期ローカルポテンシャルを生成させることを忘れないこと。
+対称性データはこの初期電荷密度と無矛盾でなければならないが、スピン偏極が存在する場合の
+可能な対象操作の列挙にも\verb+FINDSYM+ (\verb+http://stokes.byu.edu/iso/findsym.php/+)が
+利用できる。
+
+各バンドあたり各原子につくるスピン分極の向きを計算したい場合には, vbpefの入力に
+知りたい原子位置に密度計算の球を設定してからvbpefに
+\verb+distrib_mode='sphere'+を用いて計算させ、出力の論理基盤 \NFOUT を見れば良い。
+
+
+\subsection{計算条件の改良}
+
+同じ計算条件ではない波動関数、ローカルポテンシャルを読むことが出きるので
+計算条件の逐次改良が可能である。
+ただし、2成分波動関数(Pauli方程式)と1成分波動関数(Schr\"odinger方程式)
+の間の相互変換はまだサポートされていない。
+
+\subsection{メモリ}
+
+最近のハードウエアはメモリが多く搭載されているため、波動関数などのデータは
+すべてメモリ上に載せられている。オリジナルのTAPPのように途中でディスクに置くことはできない。
+
+\subsection{ファイルI/O}
+
+通常Fortranの処理系は環境変数をセットすることであらかじめ論理機番を特定のファイルに
+結びつけておくことができる。この機能を用いて入出力をセットアップするスクリプトを用意して
+その中から各プログラムを呼び出すようにするのが良いだろう。
+
+ただし、gfortran(version 4.7.2)ではこの機能は存在しないようである。
+そのために、この機能を代替するコードがxTAPPには含まれている。
+ただし、同一のファイルを異なる論理機番に対応させることができないため、
+波動関数の入出力においては注意が必要である。
+また、この機能を使わない場合\verb+fort.*+のファイルが
+そのまま各論理機番に対応するので、あらかじめ\verb+fort.*+を目的のファイルへの
+シンボリックリンクとすることもできる。
+
+このようなfortranの機能を使う方式の他、オプションのセクションである
+file map dataセクションでファイル名をプログラムに直接与えることもできる。
+ただし、この場合でも最初の入力となる論理機番10だけは環境変数ないしシンボリックリンク
+で与えなければならない。
+
+またMPI並列実行している場合、ログを標準出力に出力するのはrank 0だけである。
+その他のI/Oも基本的にrank 0が担当するようにしてある。
+
+\subsection{MPIと環境変数と論理機番}
+
+論理機番を環境変数を使ってプログラムに渡す場合、MPIの実装によっては
+mpirunの引数の中に記述するなど特定の方法を取らない限りプログラムに
+環境変数を伝達できないことがあるので、注意が必要である。
+
+\subsection{波動関数の分散}
+
+波動関数の分散は平面波基底で行っており、FFTが必要になるときだけ
+データをバンド分散に持ち替えている。ローカルポテンシャル、電荷分布などは
+各MPIプロセスがコピーを持っている。
+
+\subsection{hybrid並列}
+
+大規模な系の場合、分散できないメモリ量が増大するため、hybrid並列を用いて
+1 MPIプロセスあたりのメモリ量を増やすことが必須になる。
+
+また計算機システムによってはhybrid並列の方が通信などが高性能になるものもある。
+また、バンド$\times$バンド程度の大きさの密行列の固有値問題を解く時、この規模の問題が
+shared memory並列では性能が出るが、MPI並列では性能がでないこともある。ここ部分は
+高並列では主要な律速の一つなので、高速化が重要である。
+
+hybrid実行する場合、1 MPI processが1つのuniform memory accessの単位、
+通常は1 chip、を構成するのが通常良い。ただし、非常に高並列になる場合にはもっと大きい単位を
+とると効果がでる場合がある。またこの場合には、FFTルーチン、LAPACK、密行列対角化ルーチン
+がshared memory並列となるようライブラリなどを選択すること。
+
+\subsubsection{OpenMP}
+
+hybrid並列をOpenMPによって行っている場合、OpenMPのスレッドに割り当てる
+スタックの大きさを系の大きさに応じて大きくする必要があることがある。Intel Fortran
+ではある。この設定は
+環境変数\verb+OMP_STACKSIZE+で行うことができ、\verb+OMP_STACKSIZE=256MB+と
+指定すれば256MBが確保される。なお、各MPIプロセスに環境変数を渡す方法はMPIの実装に
+よって異なるので注意すること。OpenMPIの場合はmpirunにオプション
+\verb+-x OMP_STACKSIZE+を渡すことで行える。
+
+\subsection{FFTW}
+
+FFTWを使っている場合、wisdomはプログラムが実行されるディレクトリにファイル
+\verb+xtapp_fftw_wisdom.dat+があればそこから読み出される。
+このファイルはすべてのMPIプロセスがアクセスする。またプログラム終了時にはwisdomが
+\verb+xtapp_fftw_wisdom.new.dat+として記録される。
+
+FFTWの初期化ではデフォルトでは詳細にもっとも良い条件を出すように設定してある。
+そのため第一回目のFFTの初期化には時間がかかることがある。
+
+\subsection{処理系によるnamelistの違い}
+
+namelist中の文字列を引用符でくくらないとならない処理系があるので注意が必要である。
+gfortranはそのような例である。
+
+\subsection{プログラムのテスト例}
+
+パッケージxTAPP-testにはプログラムのテスト例が集められている。
+この例は同時に実行例としても扱える。Makefileの先頭を調節してmakeすることで
+テスト例を実行できる。この中にはプログラムの実行スクリプトも含まれており、
+Fortranの論理機番の割り当ての処理の参考にできる。
+
+\subsection{OpenDXによる可視化の例}
+
+OpenDXによる可視化プログラムの例がxTAPP-testに含まれている。
+Makefileの\verb+TARGET_TOOL+で定義されているターゲットをmakeするとOpenDX用の
+データができるので、これをopendxディレクトリにあるOpenDXのネットワークの例
+を用いて可視化する。この例の実行には、OpenDXの追加モジュールのCMSPが必要である。
+これは、Octopus[1]のwebページから入手できる。
+
+\vspace{5mm}
+\noindent [1] \verb+http://www.tddft.org/programs/octopus/+
+
+\subsection{プログラムの理解}
+
+TAPP-3.0系列とは元々同じものであったため変数名、サブルーチン名は共通点が多い。
+そのためTAPP-3.0系列の文書にある情報は参考になる。
+
+\section{動作しないとき}
+\subsection{スタック制限に注意}
+UNIX系のシステムでは、標準のスタック制限がきつめにかけてある物がある。
+このプログラムはOpenMP並列などのためスタックを多く使うので、
+この制限を解除しておかないとプログラムが不意に停止することがある。
+
+\section{プログラム群が扱う論理機番とファイル}
+
+\begin{longtable}{p{2cm}p{9cm}p{2cm}}
+\hline
+ 論理機番 & 内容 & 標準拡張子\\
+\hline
+\endhead
+\hline
+\endfoot
+ \NFINPUT & 入力データ & \\
+ \NFPOTone & 一番目の擬ポテンシャルデータ。以降\NFPOTone + 1と続く。\\
+ \NFRHIone & 一番目の原子電荷データ。以降\NFRHIone + 1と続く。\\
+ \NFVBCHRGWAV & projected DOS計算のための動径波動関数データ & pwav\\
+ \NFCHR & 電荷密度分布 & rho\\
+ \NFLPT & 局所ポテンシャル & lpt\\
+ \NFWFI & 入力する波動関数 & wfn \\
+ \NFWFO & 出力する波動関数 & wfn \\
+ \NFRSL & 構造最適化結果のサマリ & str \\
+ \NFBND & k点のトレースを行ったときの固有値データ & band\\
+ \NFOUT & k点のトレースを行ったときの分布データ & bunpu\\
+ \NFROK & k点のトレースを行ったときの軌道電荷密度データ & rok\\
+ \NFWFK & k点のトレースを行ったときの波動関数データ & wfk\\
+ \NFSTM & STM像のデータ & stm \\
+ \NFOUTwfntochg & projected DOSのデータ & bunpu\\
+ \NFMDLOG & 分子動力学計算の軌跡の記録データ & mdlog\\
+ \NFPE & バンドのコサイン展開係数 & pe \\
+ \NFPOTS & 擬ポテンシャルの平面波展開データ & pots \\
+ \NFBSPOT & 擬ポテンシャルのフィッティングデータ & bpts\\
+ \NFMDCNT & 分子動力学計算の計算継続用の途中状態データ & mdcnt\\
+ \NFLMD & 構造最適化の計算継続用の途中状態データ(一次元最適化) & lmd \\
+ \NFACGD & 構造最適時の計算継続用の途中状態データ(CG法) & acgd \\
+ \NFSCFD & SCFループの途中状態データ & scfd\\
+ \NFOUTwfntochgTetra & 四面体法でprojected DOSを計算するためのデータ & dosms\\
+ \NFRECIPWAN & 逆空間表現のワニエ関数データ & rcpw\\
+ \NFAMATWAN & ワニエ関数をブロッホ関数から構成する際の変換行列 & amat\\
+ \NFHMATRWAN & ワニエ関数によってハミルトニアンの係数を計算したもの & hmatr\\
+ \NFREALWAN & ワニエ関数の実空間表現のデータ & rwan\\
+ \NFPOSWAN & ワニエ関数の実空間での中心位置 & posw\\
+\end{longtable}
+
+\section{ファイルフォーマット}
+\subsection{\NFOUT 番: k点のトレースを行ったときの分布データ}
+
+以下のFortran擬似コードによるアスキーファイルフォーマットが用いられる。
+
+\begin{verbatim}
+if (distrib_mode.eq.'plate') then
+  write(6,*) ifbunp=1
+else if (distrib_mode.eq.'sphere') then
+  write(6,*) ifbunp=2
+end if
+write(6,*) number_trace_block,number_band_traced,ifbunp,number_spin, &
+           number_component
+write(6,*) (nkfi(nb),nb=1,number_trace_block+1)
+do i=1,number_trace_block+1
+  x1=ak(1,i)*bb(1,1)+ak(2,i)*bb(1,2)+ak(3,i)*bb(1,3)
+  x2=ak(1,i)*bb(2,1)+ak(2,i)*bb(2,2)+ak(3,i)*bb(2,3)
+  x3=ak(1,i)*bb(3,1)+ak(2,i)*bb(3,2)+ak(3,i)*bb(3,3)
+  write(6,*) x1,x2,x3
+end do
+if (distrib_mode.eq.'plate') then
+  write(6,*) distrib_number_plate
+else if (distrib_mode.eq.'sphere') then
+  write(6,*) distrib_number_sphere
+end if
+icount=0
+do nb=1,number_trace_block
+  nke=nkfi(nb)
+  if(nb.eq.nbk) nke=nke+1
+  do nk=1,nke
+    sk(1:3)=ak(1:3,nb)+(ak(1:3,nb+1)-ak(1:3,nb))*dble(nk-1)/dble(nkfi(nb))
+    icount=icount+1
+    write(6,*) icount,sk,distrib_band_lower,distrib_band_upper, &
+               number_band_traced
+    do isph=1,nsph
+      if (distrib_mode.eq.'plate') then
+        write(6,*) iaxis(isph),rmin(isph),rmax(isph),ndiv(isph)
+      else if (distrib_mode.eq.'sphere') then
+        write(6,*) (rzero(i,isph),i=1,3),rmin(isph),rmax(isph),ndiv(isph)
+      end if
+      do is=1,number_spin
+        do ib=distrib_band_lower,distrib_band_upper
+          write(6,*) ib,eigen_energy(ib)
+          write(6,*) ((chr(id,idens),id=0,ndiv),idens=1,number_component**2)
+        end do
+      end do
+    end do
+  end do
+end do
+\end{verbatim}
+
+以上の解釈においてはinputformat.texで説明されている入力変数名を参照すること。
+また
+\begin{verbatim}
+bb(1:3,1:3): 逆格子の基本ベクトル。左添字がx,y,z。右添字が基本ベクトルの番号。
+sk(1:3): 計算しているk点の位置をセル座標で書いたもの
+eigen_energy(ib): k点位置skでの第ibバンドの固有値
+chr(id,idens): 波動関数分布の値。idは分割インデックス、idensは密度成分の番号。
+               idens=1は電荷、idens=2:4はスピンの Cartesian 座標成分。
+               内容はdistrib_modeによって異なる。
+\end{verbatim}
+である。
+
+\end{document}

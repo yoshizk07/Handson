@@ -1,0 +1,497 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{実行例: ワニエ関数}
+\author{東京大学　情報理工学系　コンピュータ科学専攻 吉本 芳英}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+
+この実行例ではSrVO$_3$、BaTiO$_3$およびTMTSFの電子状態を計算し、
+最局在ワニエ関数を生成させる。最局在ワニエ関数は電子状態の解釈に有効であり、
+またそのワニエ中心は、自発電気分極の計算に用いることが出来る。
+
+\section{最局在ワニエ関数の定義}
+
+ワニエ関数の定義式は
+\[
+ w_{n,\mathbf{R}}(\mathbf{r}) = \frac{V_{cell}}{(2\pi)^3}\int_{BZ}d\mathbf{k} e^{i\mathbf{k}\cdot(\mathbf{r}-\mathbf{R})} \sum_m U_{nm}^{(k)}u_{m\mathbf{k}}(\mathbf{r})
+\]
+である。ここで$u_{m\mathbf{k}}(\mathbf{r})$は波動関数の周期的部分であり、
+$U_{nm}^{(k)}$は線型結合定数である。$N$本のワニエ関数を求めるとき、個々の
+$k$点の上には$N$本以上のバンドがあり、そのうち対応する固有エネルギーが設
+定したエネルギーウィンドウの中に入っている波動関数のみゼロではない線型結
+合定数を持つこととする。
+
+ワニエ関数の定義では線型結合定数$U$には任意性があるが、このうち広がりの総和
+\[
+ \Omega = \sum_{n=1}^{N}\left(\langle w_n |r^2|w_n\rangle - \langle w_n |\mathbf{r}|w_n\rangle^2\right)
+\]
+がもっとも小さくなるものを最局在ワニエ関数と呼ぶ。
+
+この最小化においては、$\Omega$を孤立バンド（ゲージ変換で不変なそれらが張る部分空間が不変）に
+対して不変な$\Omega_I \ge 0$とそれ以外$ \ge 0$に分解して、
+(1)$\Omega_I$の最小化、(2)それ以外の最小化と順番に最小化を行なう。
+
+この最小化には初期値依存性がある。したがって実務上はワニエ関数の初期値の与え方が問題である。
+
+\section{手順の概略}
+
+ワニエ関数の生成の概略は以下のとおりである。
+\begin{enumerate}
+ \item 対象となる結晶の電子状態計算を行い、その波動関数を求める。最終的にある程度濃い$k$点メッシュで波動関数を手に入れる必要がある。
+ \item 結晶のバンド計算を行なって、ワニエ関数の生成の基準となるエネルギーウィンドウを決める。
+エネルギーウィンドウ内に入っているバンドの線型結合としてワニエ関数が生成される。
+ \item ワニエ関数の初期値を決定する。初期値は求めるワニエ関数が概略の形を決める。
+xTAPPでは、原子に局在したガウシアンの線型結合として与える。
+したがって分子軌道になっているワニエ関数も計算できる。xTAPPでの与え方は大きく分けると
+ \begin{enumerate}
+  \item ガウシアンの種類と係数を原子ごとに指定するモード
+  \begin{enumerate}
+   \item ガウシアンの合成係数が単位行列、すなわち原子に局在したガウシアン自体が初期値のモード
+
+   \item ガウシアンの合成係数を明示的に与えるモード。分子軌道用。
+  \end{enumerate}
+  \item ガウシアンの種類を原子種ごとに指定するモード。同一の原子種に対し
+	て共通の初期ワニエ関数を設定できる。このモードはイオン結晶の価電
+	子帯全体を扱うためのもの、ギャップが存在する必要がある。またエネ
+	ルギーウィンドウも自動的に設定される。
+ \end{enumerate}
+ となっている。
+ \item \verb+wannier+を用いてワニエ関数の計算を行なう。
+ \item ワニエ関数によって補間されたバンドを計算する。(\verb+hmatr2bnd+)
+ \item ワニエ関数の実空間表現を求める。このためには\verb+wannier+を
+       \verb+rcp_to_real+モードで動かす。
+\end{enumerate}
+
+\section{xTAPPでの制限事項}
+
+最局在ワニエ関数の計算をする際のxTAPPのプログラム上の制限は
+\begin{enumerate}
+ \item Ultrasoft 擬ポテンシャルは使えず、ノルム保存擬ポテンシャルで計算する必要がある。
+ \item 結晶の対称性に応じて計算セルのとり方に制限がある。
+\begin{description}
+ \item[hcp:] $c$軸を3番目にすること。
+ \item[monoclinic:] $a$軸と$x$軸が平行、$b$軸と$y$軸も平行。
+ \item[triclinic:] $a$軸と$x$軸が平行、$b$軸は$xy$平面内。
+\end{description}
+\end{enumerate}
+となっている。
+
+\section{SrVO$_3$}
+
+原子軌道として最局在ワニエ関数を計算する例としてここではSrVO$_3$を扱う。
+この例はSrVO$_3$の低エネルギーで有効なtight binding模型の導出を目的としている。
+
+\subsection{入力ファイルの用意}
+
+通常の電子状態計算での入力とともに、セクション\verb+wannier data+を設定する。
+入力ファイルのサンプルは\verb+sample/example-srvo3+にある。
+
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ wannier_band_lower = 10,
+ wannier_band_upper = 20,
+ wannier_cell_type = 1,
+ wannier_eng_lower = 0.25725d0,
+ wannier_eng_upper = 0.35647d0, 
+ wannier_number_gaussian = 3,
+ wannier_ident_b_mat = T,
+ wannier_range_lattice_trans = 3, 3, 3
+ /
+ 3  1  0.50D0   0.00D0  0.00D0  0.00D0
+ 3  2  0.50D0   0.00D0  0.00D0  0.00D0  
+ 3  4  0.50D0   0.00D0  0.00D0  0.00D0 
+\end{verbatim}
+
+この設定では、エネルギーウィンドウが
+\verb+wannier_eng_lower+から\verb+wannier_eng_upper+まで設定している。
+この範囲はフェルミ面をまたぎ、他から孤立しているバンドを\verb+vbpef+によるバンド計算で確認して
+それを切り出すように設定する（値はa.u.である）。
+この目的のためにバンドの最大値と最小値を確認する必要があるが、
+これを計算するツールがxTAPP-utilの\verb+minmaxband+である。
+
+また、これを含む形で計算対象となるバンド番号の範囲が\verb+wannier_band_lower+から
+\verb+wannier_band_upper+まで設定している。
+
+\verb+wannier_ident_b_mat = T+
+であるので、基底として設定する個々のガウシアンがそのままワニエ関数の初期値となる。
+\verb+wannier_number_gaussian+が3なので3個のガウシアンが「基底＝ワニエ関数の初期値」
+として設定されるがそれらは、セルの(0,0,0)に位置している。なおこの位置はVの位置である。
+ガウシアンの軌道角運動量はすべてd(=3)であり、
+空間的にはxy,-yz,-zx(=1,2,4)の形をしている。ガウシアンの指数はすべて$0.5$である。
+
+\verb+wannier+はデフォルトのモードでは生成したワニエ関数でKSハミルトニアンの
+行列要素を計算するがその計算する並進ベクトルの範囲を与えているのが
+\verb+wannier_range_lattice_trans = 3, 3, 3+である。
+
+最後に\verb+wannier_cell_type = 1+であるので計算がsimple cubicの系に適用される
+ことが分かる。
+
+\subsection{SrVO$_3$: 計算の実行}
+
+擬ポテンシャルにはxTAPPの擬ポテンシャルライブラリにあるノルム保存、PBEの
+条件のSr,V,O原子をそれぞれ用いる。擬ポテンシャルのファイル名はps-Sr, ps-V, ps-O
+であり、対応する初期電荷分布ファイルの名前は、ps-Sr.ichr, ps-V.ichr, ps-O.ichrである。
+これらを\verb+sample/example-srvo3+からコピーした入力ファイルと
+同じ作業ディレクトリにコピーして使う。また、xTAPP-testから\verb+6core4rank.rkf+
+ファイルを同様にコピーしておく。
+
+xTAPPの実行ファイル群については、この実行例ではカレントディレクトリにコピー済みであると
+仮定する。
+
+入力ファイルとして\verb+srvo3.cg+を使って波動関数の計算を行なう。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./srvo3.cg
+$ mpirun ./inipot > inipot.log
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。この実行では実際の電子状態計算は2 MPIプロセスで起動される。
+計算のログはそれぞれ\verb+inipot.log+と\verb+cgmrpt.log+に回収されている。
+
+次に、入力ファイルとして\verb+srvo3.wan+を使ってバンド計算を行なう。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./srvo3.wan
+$ mpirun -np 2 -rf 6corefproc.rkf ./vbpef > vbpef.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。この実行では実際の電子状態計算は2 MPIプロセスで起動される。
+計算のログは\verb+vbpef.log+に回収されている。
+
+バンド計算のデータは\verb+srvo3.band+に格納されるので、このバンド計算から
+バンド図を\verb+xTAPP-util+のバンド図作成ツール\verb+vbpef2gp-lsda+を
+用いて作成する。
+
+vbpef2gp-lsdaの使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ vbpef2gp-lsda ./srvo3.band
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるsrvo3.bandが処理されて
+srvo3.gp、srvo3.dat、srvo3.kptが作成される。
+次にgnuplotでsrvo3.gpを処理するとバンド図がgnuplotで作成される。
+
+本来ならばこのバンド図を見ながら必要なエネルギーウィンドウを調節するが、
+この例ではすでに調節済みの入力ファイルが用意されている。
+
+次に、入力ファイルとして\verb+srvo3.wan+を使って最局在ワニエ関数の
+計算を行なう。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./srvo3.wan
+$ mpirun -np 1 ./wannierf > wannier.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。wannierは動作が並列化されていないため1 MPI processでの実行を行なう。
+計算のログは\verb+wannier.log+に回収されている。
+
+実行の結果
+\begin{description}
+ \item[srvo3.rcpw] 逆空間表現のワニエ関数データ
+ \item[srvo3.amat] ワニエ関数をブロッホ関数から構成する際の変換行列
+ \item[srvo3.hmatr] ワニエ関数によってハミルトニアンの係数を計算したもの
+ \item[srvo3.posw] ワニエ関数の実空間での中心位置
+\end{description}
+がそれぞれ生成される。また回収したログ\verb+wannier.log+には
+それぞれの$\mathbf{R}$における最局在ワニエ関数でのKSハミルトニアンの
+行列要素が\verb+H_MAT_R+の行以降に表示されている。例えば
+
+\begin{verbatim}
+ -------
+ H_MAT_R
+ -------
+  
+            -3            -3            -3
+    0.00000861    0.00002751    0.00002751
+    0.00002751    0.00000861   -0.00002751
+    0.00002751   -0.00002751    0.00000861
+ 
+            -3            -3            -2
+   -0.00005506   -0.00005594   -0.00005594
+   -0.00005594   -0.00002573    0.00004814
+   -0.00005594    0.00004814   -0.00002573
+
+   ...
+\end{verbatim}
+となっているが、ここでそれぞれのブロックの先頭の3つの整数が
+$\mathbf{R}$の係数であり、続く行列はワニエ関数の足をもつ
+ハミルトニアンの行列要素(単位はeV)である。オンサイトの行列要素を見たければ
+$\mathbf{R}$の係数が$(0, 0, 0)$のところを見れば良い。
+
+このうち\verb+srvo3.hmatr+からはワニエ関数で補間したバンド図を
+xTAPP付属のhmatr2bndで計算することが出来る。
+
+このためのsh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./srvo3.wan
+$ ./hmatr2bnd > hmatr2bnd.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。計算のログは\verb+wannier.log+に回収されている。
+バンド図のデータはvbpefと同様srvo3.bandに出力されるので
+これをvbpefの場合と同様にvbpef2gp-lsdaに処理させると
+gnuplotで処理するための\verb+srvo3.gp+,\verb+srvo3.kpt+,\verb+srvo3.dat+
+が出力される。
+
+\subsection{ワニエ関数の実空間表現}
+
+ここまでの計算で出力しているワニエ関数は逆空間での表現を使っている。
+これを可視化ソフト向けに、一番目のワニエ関数の実空間表現を求める
+には、\verb+srvo3.rwan+にあるように\verb+wannier+の入力に
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ wannier_band_lower = 10,
+ wannier_band_upper = 20,
+ wannier_cell_type = 1,
+ wannier_eng_lower = 0.25725d0,
+ wannier_eng_upper = 0.35647d0, 
+ wannier_number_gaussian = 3,
+ wannier_ident_b_mat = T,
+ wannier_range_lattice_trans = 3, 3, 3,
+ program_mode = 'recp_to_real',
+ wannier_target_number = 2,
+ wannier_target_number = 1
+ /
+ 3  1  0.50D0   0.00D0  0.00D0  0.00D0
+ 3  2  0.50D0   0.00D0  0.00D0  0.00D0  
+ 3  4  0.50D0   0.00D0  0.00D0  0.00D0 
+\end{verbatim}
+と\verb+program_mode = 'recp_to_real'+を指定するように改め、
+計算したいワニエ関数の番号を\verb+wannier_target_number+にセットする。
+
+そして、計算データのあるディレクトリで\verb+wannier+をもう一度動かす。
+wannierはMPI並列化されていないので、そのつもりで扱うこと。
+
+すると\verb+srvo3.rwan+にxTAPPの電荷分布ファイル\verb+srvo3.rho+と
+同じフォーマットで指定した番号のワニエ関数が出力される。
+このワニエ関数の$\mathbf{r}$の範囲は、
+$\mathbf{a},\mathbf{b},\mathbf{c}$軸単位で$-1$から$1$までである。
+
+実際の可視化にはxTAPP-utilに含まれるツールを用いるが
+OpenDX向けならrho2dxでDXファイルに、vestaやxcrysden向けならrho2xsfで
+XSFファイルに変換する。
+
+\section{BaTiO$_3$}
+
+\subsection{入力ファイルの用意}
+
+この節の目的はBaTiO$_3$の自発電気分極を計算することである。
+
+このために通常の電子状態計算での入力とともに、セクション\verb+wannier data+を設定する。
+入力ファイルのサンプルは\verb+sample/example-batio3+にある。
+\verb+batio3.cg+が構造最適化用、\verb+batio3.wan+がワニエ関数の計算用である。
+この構造最適化の入力値ではセルは固定になっている。
+
+入力例におけるワニエ関数の生成に関わる部分は
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ wannier_cell_type = 5,
+ wannier_range_lattice_trans = 3, 3, 3,
+ wannier_ini_basis_mode = 2,
+ wannier_threshold_spread = 1.0d0
+ /
+ 0
+ 0
+ 4
+ 1  1  0.80d0
+ 2  1  0.80d0
+ 2  2  0.80d0
+ 2  3  0.80d0
+\end{verbatim}
+である。
+
+この設定では、\verb+wannier_ini_basis_mode = 2+を指定することで
+ワニエ関数の初期値生成を原子種ごとのガウシアンの指定で簡略化している。
+1,2番のBa原子とTi原子はカチオンであるため、これらの位置には価電子帯の
+基底を設定する理由はない。
+3番の原子種が酸素に対応しているが、BaTiO$_3$の価電子帯は
+アニオンである酸素の軌道だけで構成されているので、酸素原子だけにワニエ関数の
+初期値を設定すればよい。必要な個数は4個でs軌道が1個、p軌道が3個である。
+それぞれのガウシアンの指数は0.8としている。
+またこの設定では、生成するワニエ関数の個数、ワニエ関数を
+構成するバンドの範囲、jエネルギーウィンドウは価電子帯の情報
+から自動的に決定される。
+
+他には\verb+wannier_cell_type = 5+であるので計算が orthorhombic ないし
+tetragonalの系に適用されることが分かる。
+また自発電気分極を計算できれば良いので、
+\verb+wannier_threshold_spread = 1.0d0+と設定して
+ワニエ関数自体の収束条件を緩めている。
+
+\subsection{BaTiO$_3$: 計算の実行と結果の確認}
+
+計算の実行手順自体はSrVO$_3$のケースと同様である。
+
+ただし、構造最適化を行なう関係で、\verb+wannier+に構造最適化した
+原子位置を渡すように注意する必要がある。簡単には\verb+wannier+の入力ファイルの
+セクションmain dataセクションで\verb+chain_calc = 3+を指定することである。
+
+\verb+wannier+を起動して標準出力から回収したファイルwannier.logには
+自発電気分極に関して、イオンの分極のデータ
+\begin{verbatim}
+ Ionic polarization (Cartesian) =
+   0.60328000000E+02  0.60328000000E+02  0.62249686683E+02
+\end{verbatim}
+と、 ワニエ中心のデータ
+\begin{verbatim}
+ Sum of Wannier center (invariant, aligned, Cartesian) =
+   0.30164000000E+02  0.30164000000E+02  0.32128852973E+02
+\end{verbatim}
+が出力される。これらはデカルト座標（原子単位系）を使っている。ワニエ中心ごとに
+$2e$が割り当てられているとして、単位体積あたりの自発電気分極を計算するには、これらの電気量の
+重みを加味した差を計算して、それをセル体積で割れば良い。計算するとz軸方向に
+$-0.26$C/m$^2$となる。
+
+\section{TMTSF}
+
+分子軌道として最局在ワニエ関数を計算する例としてTMTSFの低エネルギーで有効な
+tight binding model化をここでは扱う。
+入力例は、\verb+sample/example-tmtsf+にある。
+
+\subsection{入力ファイルの準備}
+
+\verb+tmtsf.cg+では最後に波動関数も出力するよう\verb+store_wfn = 1+としておく。
+\verb+wannier+のための入力ファイル\verb+tmtsf.wan+には
+セクション\verb+wannier data+を設定する。
+
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ wannier_band_lower = 95,
+ wannier_band_upper = 105,
+ wannier_cell_type = 7,
+ wannier_eng_lower = 0.0992227d0,
+ wannier_eng_upper = 0.1653712d0, 
+ wannier_target_number = 1,
+ wannier_range_lattice_trans = 2, 2, 1 
+ wannier_ident_b_mat=F, 
+ wannier_target_spin=1, 
+ wannier_number_basis=2, 
+ wannier_number_gaussian = 6,
+ /
+ 2  1   0.2000000000   0.2663500000   0.4595000000   0.4480000000
+ 2  2   0.2000000000   0.2663500000   0.4595000000   0.4480000000
+ 2  3   0.2000000000   0.2663500000   0.4595000000   0.4480000000
+ 2  1   0.2000000000   0.7336500000   0.5405000000   0.5520000000
+ 2  2   0.2000000000   0.7336500000   0.5405000000   0.5520000000
+ 2  3   0.2000000000   0.7336500000   0.5405000000   0.5520000000
+ -1.254091647009883E-003 -2.877428766730999E-002 -0.999585147760500 0.0 0.0 0.0
+  0.0 0.0 0.0 1.401535606181722E-002 -2.145448567192877E-002 -0.999671583490805     
+\end{verbatim}
+
+SrVO$_3$の例と同様にこの設定では、エネルギーウィンドウが
+\verb+wannier_eng_lower+から\verb+wannier_eng_upper+まで設定される。
+この範囲は\verb+vbpef+によるバンド計算からフェルミエネルギーにまたがって孤立している
+バンドを切り出すように設定されている（値はa.u.である）。
+この目的のためにバンドの最大値と最小値を確認する必要があるが、
+これを計算するツールがxTAPP-utilの\verb+minmaxband+である。
+
+また、これを含む形で計算対象となるバンド番号の範囲が\verb+wannier_band_lower+から
+\verb+wannier_band_upper+まで設定される。\verb+wannier_ident_b_mat = F+
+であるので、定義したガウス基底を線型結合させてワニエ関数の初期値を指定している。
+
+\verb+wannier_number_gaussian+が6なので6個のガウス基底が定義される。
+これらは最後から$8$行めから$3$行めまでで指定されているが
+ガウス基底の指数はすべて$0.2$であり、軌道角運動量はすべて$p$となっている。
+この例では2個あるTMTSF分子の中心に$-p_y$,$p_z$,$-p_x$タイプのガウス基底を
+それぞれ置いている。
+
+求めるワニエ関数の個数は\verb+wannier_number_basis+が指定している2個であるが、
+この数だけ初期値が必要で、このための定義したガウス基底の線型結合係数は
+最後の2行にそれぞれ指定してある。この例ではTMTSF分子の分子面の法線方向が
+ほぼ$a$軸方向=$x$軸方向になっていることと対応して、ガウス基底の合成としてほぼ$p_x$型の軌道
+が初期値として定義されている。
+本当の最局在ワニエ関数はTMTSF分子内に広がっているが、ここでは分子面をノードとしている
+ことだけが共通となっている初期値を定義したことになっている。
+しかしながらこれでも所望の最局在ワニエ関数が得られる。
+
+最後に\verb+wannier_cell_type = 7+であるので計算がtriclinicのセルで
+行なわれることが分かる。また生成したワニエ関数でKSハミルトニアンの
+行列要素を計算する並進ベクトルの範囲は$a$,$b$,$c$軸の方向に
+\verb+wannier_range_lattice_trans = 2, 2, 1+で与えられている。
+
+\subsection{計算の実行}
+
+まずは入力ファイル\verb+tmtsf.cg+を\verb+inipot+と\verb+cgmrpt+に
+順番にかけて収束した電子状態を得る。TMTSFは原子数が多いため計算はそれなりに負荷が大きい。
+そのため並列化された状態で計算する方が良い。ノートパソコン程度ではこの計算は困難であろう。
+
+必要な擬ポテンシャルはノルム保存、PBEのものをxTAPPの擬ポテンシャル
+ライブラリからカレントディレクトリにコピーしておく。
+
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ FORT10=tmtsf.cg mpirun ./inipot > inipot.log
+$ FORT10=tmtsf.cg OMP_NUM_THREADS=6 mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。この実行では実際の電子状態計算は2 MPIプロセス、6スレッド／1 MPIプロセスで起動される。
+計算のログはそれぞれ\verb+inipot.log+と\verb+cgmrpt.log+に回収されている。
+
+次に、入力ファイルとして\verb+srvo3.wan+を使って最局在ワニエ関数の計算を行なう。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ FORT10=tmtsf.wan OMP_NUM_THREADS=6 mpirun -np 1 -rf 6corefproc.rkf ./wannier > wannier.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。計算のログはそれぞれ\verb+wannier.log+に回収されている。
+
+こののちの最局在ワニエ関数によるKS方程式の行列要素の計算や、補間バンドの計算はSrVO$_3$のケースと同様である。
+KS方程式の行列要素の一部は
+\begin{verbatim}
+ -------
+ H_MAT_R
+ -------
+
+ ...
+
+             0             0             0
+    3.60880014    0.25391317
+    0.25391317    3.60878587
+ 
+             0             0             1
+   -0.00079463   -0.00025102
+    0.00072237   -0.00079462
+
+ ...
+ 
+             0             1             0
+    0.05619821    0.00004216
+   -0.05783065    0.05623970
+
+ ...
+
+             1             0             0
+    0.00819075    0.00195015
+    0.26000214    0.00819130
+\end{verbatim}
+であるが、ここから、このワニエ関数による行列要素は
+\begin{enumerate}
+ \item オンサイトエネルギーは3.609 eV
+ \item オンサイトの非対角は0.254 eV
+ \item a軸方向で隣り合う分子間の非対角は0.260 eV
+ \item その他の非対角は一回り小さい。すなわち擬一次元的である。
+\end{enumerate}
+などと求まる。
+
+\end{document}

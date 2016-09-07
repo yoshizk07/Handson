@@ -1,0 +1,109 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 0.8.5 ] */
+
+/* [wxMaxima: input   start ] */
+tw(rho,drho,laprho) := 1/8*drho^2/rho-1/8*laprho;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+ec(rho,drho,laprho) := -a/(1+d*rho^(-1/3))*(rho+b*rho^(-2/3)*(cf*rho^(5/3)-2*tw(rho,drho,laprho)+(1/9*tw(rho,drho,laprho)+1/18*laprho))*exp(-c*rho^(-1/3)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(ec(rho,drho,laprho),rho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(ec(rho,drho,laprho),drho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(ec(rho,drho,laprho),laprho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+gam(rhoa,rhob) := 2*(1-(rhoa^2+rhob^2)/(rhoa+rhob)^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob) := -a*gam(rhoa,rhob)*(1+d*(rhoa+rhob)^(-1/3))*((rhoa+rhob)+2*b*(rhoa+rhob)^(-5/3)*(2^(2/3)*cf*(rhoa^(8/3)+rhob^(8/3))-(rhoa+rhob)*tw(rhoa+rhob,drho,laprhoa+laprhob)+1/9*(rhoa*tw(rhoa,drhoa,laprhoa)+rhob*tw(rhob,drhob,laprhob))+1/18*(rhoa*laprhoa+rhob*laprhob))*exp(-c*rho^(-1/3)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),rhoa,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),drhoa,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),laprhoa,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),drho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),rhob,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),drhob,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,drho,laprhoa,laprhob),laprhob,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+omega(rho) := exp(-c*rho^(-1/3))/(1+d*rho^(-1/3))*rho^(-11/3);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+delta(rho) := c*rho^(-1/3)+d*rho^(-1/3)/(1+d*rho^(-1/3));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eclsd(rhoa,rhob,drhoa,drhob,rho,drho) := -a*4/(1+d*rho^(-1/3))*rhoa*rhob/rho - a*b*omega(rho)*(rhoa*rhob*(2^(11/3)*cf*(rhoa^(8/3)+rhob^(8/3))+(47/18-7/18*delta(rho))*drho^2-(5/2-1/18*delta(rho))*(drhoa^2+drhob^2)-(delta(rho)-11)/9*(rhoa/rho*drhoa^2+rhob/rho*drhob^2))-2/3*rho^2*drho^2+(2/3*rho^2-rhoa^2)*drhob^2+(2/3*rho^2-rhob^2)*drhoa^2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(eclsd(rho/2,rho/2,drho/2,drho/2,rho,drho));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rho/2,rho/2,drho/2,drho/2,rho,drho),rho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rho/2,rho/2,drho/2,drho/2,rho,drho),drho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho),rhoa,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho),drhoa,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho),drho,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho),rhob,1));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(diff(eclsd(rhoa,rhob,drhoa,drhob,rhoa+rhob,drho),drhob,1));
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

@@ -1,0 +1,469 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{実行例: Cuの電子状態}
+\author{鳥取大学 吉本 芳英}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+この実行例ではCuの電子状態を計算し、バンド図、波動関数のk点依存性、フェルミ面を描画する。
+なおこの配布パッケージには入力例と出力例が同梱されている。
+\verb+sample/example-cu+を見ること。
+
+\section{入力データの用意}
+
+この節で作成する各セクションはまとめてcu.cgに収納する。
+
+\subsection{原子構造データの構成}
+
+conventional cellでのCuの対称性は$Fm\bar{3}m$ (225)である。
+この対称操作のうち、面心位置への並進を除いた操作は48種類あり、
+conventional cellでの$x,y,z$で表現すると
+\vspace{5mm}\hrule
+\begin{verbatim}
+  x,y,z    
+ -x,-y,z  
+ -x,y,-z  
+  x,-y,-z  
+  z,x,y    
+  z,-x,-y  
+ -z,-x,y  
+ -z,x,-y  
+  y,z,x    
+ -y,z,-x  
+  y,-z,-x  
+ -y,-z,x  
+  y,x,-z   
+ -y,-x,-z 
+  y,-x,z   
+ -y,x,z   
+  x,z,-y   
+ -x,z,y   
+ -x,-z,-y 
+  x,-z,y   
+  z,y,-x   
+  z,-y,x   
+ -z,y,x   
+ -z,-y,-x 
+ -x,-y,-z 
+  x,y,-z   
+  x,-y,z   
+ -x,y,z   
+ -z,-x,-y 
+ -z,x,y   
+  z,x,-y   
+  z,-x,y   
+ -y,-z,-x 
+  y,-z,x   
+ -y,z,x   
+  y,z,-x   
+ -y,-x,z  
+  y,x,z    
+ -y,x,-z  
+  y,-x,-z  
+ -x,-z,y  
+  x,-z,-y  
+  x,z,y    
+ -x,z,-y  
+ -z,-y,x  
+ -z,y,-x  
+  z,-y,-x  
+  z,y,x    
+\end{verbatim}
+\hrule\vspace{5mm}
+である。なお、この情報はbilbao crystallographic server,
+\verb+http://www.cryst.ehu.es/+でgeneral positionを調べることで得られる。
+
+これらから実際に計算で使用する、primitive cellの逆格子に作用する
+対称操作行列の計算はGNU octaveなどで実行できる。これを実行するプログラムは
+\verb+symop-fcc.m+である。
+
+この結果からfccの対称性を指定するsymmetry dataセクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# symmetry data
+&symmetry
+symmetry_format = reciprocal,
+number_sym_op = 48
+/
+   1   0   0   0   1   0   0   0   1   0   0   0
+  -1  -1  -1   0   0   1   0   1   0   0   0   0
+   0   0   1  -1  -1  -1   1   0   0   0   0   0
+   0   1   0   1   0   0  -1  -1  -1   0   0   0
+   0   0   1   1   0   0   0   1   0   0   0   0
+  -1  -1  -1   0   1   0   1   0   0   0   0   0
+   0   1   0  -1  -1  -1   0   0   1   0   0   0
+   1   0   0   0   0   1  -1  -1  -1   0   0   0
+   0   1   0   0   0   1   1   0   0   0   0   0
+  -1  -1  -1   1   0   0   0   0   1   0   0   0
+   1   0   0  -1  -1  -1   0   1   0   0   0   0
+   0   0   1   0   1   0  -1  -1  -1   0   0   0
+   1   1   1   0  -1   0   0   0  -1   0   0   0
+  -1   0   0   0   0  -1   0  -1   0   0   0   0
+   0   0  -1  -1   0   0   1   1   1   0   0   0
+   0  -1   0   1   1   1  -1   0   0   0   0   0
+   0   0  -1   1   1   1   0  -1   0   0   0   0
+  -1   0   0   0  -1   0   1   1   1   0   0   0
+   0  -1   0  -1   0   0   0   0  -1   0   0   0
+   1   1   1   0   0  -1  -1   0   0   0   0   0
+   0  -1   0   0   0  -1   1   1   1   0   0   0
+  -1   0   0   1   1   1   0   0  -1   0   0   0
+   1   1   1  -1   0   0   0  -1   0   0   0   0
+   0   0  -1   0  -1   0  -1   0   0   0   0   0
+  -1   0   0   0  -1   0   0   0  -1   0   0   0
+   1   1   1   0   0  -1   0  -1   0   0   0   0
+   0   0  -1   1   1   1  -1   0   0   0   0   0
+   0  -1   0  -1   0   0   1   1   1   0   0   0
+   0   0  -1  -1   0   0   0  -1   0   0   0   0
+   1   1   1   0  -1   0  -1   0   0   0   0   0
+   0  -1   0   1   1   1   0   0  -1   0   0   0
+  -1   0   0   0   0  -1   1   1   1   0   0   0
+   0  -1   0   0   0  -1  -1   0   0   0   0   0
+   1   1   1  -1   0   0   0   0  -1   0   0   0
+  -1   0   0   1   1   1   0  -1   0   0   0   0
+   0   0  -1   0  -1   0   1   1   1   0   0   0
+  -1  -1  -1   0   1   0   0   0   1   0   0   0
+   1   0   0   0   0   1   0   1   0   0   0   0
+   0   0   1   1   0   0  -1  -1  -1   0   0   0
+   0   1   0  -1  -1  -1   1   0   0   0   0   0
+   0   0   1  -1  -1  -1   0   1   0   0   0   0
+   1   0   0   0   1   0  -1  -1  -1   0   0   0
+   0   1   0   1   0   0   0   0   1   0   0   0
+  -1  -1  -1   0   0   1   1   0   0   0   0   0
+   0   1   0   0   0   1  -1  -1  -1   0   0   0
+   1   0   0  -1  -1  -1   0   0   1   0   0   0
+  -1  -1  -1   1   0   0   0   1   0   0   0   0
+   0   0   1   0   1   0   1   0   0   0   0   0
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+\footnote{なお、これらの操作には反転対称性が含まれているが、反転対称性による
+計算の省力化を使わない場合、これを省略して24種類とすることがある。}
+
+次に原子の位置情報などを指定する
+atom dataセクションであるが、使用する擬ポテンシャルは11価の銅原子である。
+原子の位置は原点であるから、
+\vspace{5mm}\hrule
+\begin{verbatim}
+# atom data
+ 11  29
+ 1   0.0  0.0  0.0
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+
+\subsection{サンプル$k$点データの構成}
+
+$16\times 16\times 16$のサンプル$k$点を構成する。$\Gamma$点を通らない
+メッシュを作る。バンドの分散関係$\epsilon_n(k)$の
+$\cos$展開を$32\times 32\times 32$のメッシュで行う。
+
+バンド図の計算だけなら、このように濃いメッシュは必要ないがフェルミ面の
+描画をするために濃いメッシュを使う。
+
+サンプル$k$点関連の情報を指定するk-points dataセクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# k-points data
+&smpl_kpt
+dos_mode = COS,
+dos_mesh = 32, 32, 32,
+bz_mesh = 32,
+bz_number_tile = 1
+/
+    17    17    17
+     2     2     2
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。
+
+\subsection{計算条件のセットアップ}
+
+平面波基底のカットオフエネルギーを$49$Ryに取るには、波数を$7$に取れば良い。
+また、スピンなしの計算を行うこととする。
+その他の条件を、
+\begin{itemize}
+\item 格子定数$a = 6.90772$ bohrにとる。
+\item 元素の数は1個。原子数は全部で1個。
+\item 価電子帯に必要なバンドを12本とする。
+\item SCFは40回も回せばこの場合収束するはずである。
+\item 交換相関汎関数にPBEを使う。
+\item 多めに計算の打ち切り時間を7200秒にセット。
+\item 終了時に波動関数を書き出しておく。
+\item 初期電荷を原子の電荷データから作成する。
+\end{itemize}
+とすると、\verb+main data+セクションは
+\vspace{5mm}\hrule
+\begin{verbatim}
+# main data
+&tappinput
+lattice_factor = 6.90772,
+lattice_list = 0.5,  0.5,  0.0,
+               0.5,  0.0,  0.5,
+               0.0,  0.5,  0.5,
+cutoff_wave_function = 7.0,
+number_element = 1,
+number_atom = 1,
+number_band = 12,
+store_wfn = 1,
+initial_lpt = 2,
+scf_number_iter_1st = 40,
+scf_number_iter = 40,
+xc_type = PBE,
+control_uptime = 7200.0
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+構造最適化は行わないので、\verb+struct_opt data+セクションを以下のようにセットする。
+\vspace{5mm}\hrule
+\begin{verbatim}
+# struct_opt data
+&struct_opt
+number_cycle = 0
+/
+\end{verbatim}
+\hrule\vspace{5mm}
+これで、与えた構造についての電子状態計算のみが実行される。
+
+構造最適化のための制約条件は特に必要なく、すべてデフォルトの
+制約しないでよいから、
+\verb+str_opt_constr data+セクションに
+\vspace{5mm}\hrule
+\begin{verbatim}
+# str_opt_constr data
+ 1
+ 0
+\end{verbatim}
+\hrule\vspace{5mm}
+としておく。
+
+\subsection{入出力ファイルの一括指定}
+
+xTAPPはいくつものファイルを作成するが、この文書ではそれらの名前を
+与えた基幹部分と既定のサフィックスの形で指定することにする。
+この場合にはfile map dataセクションを設定するのが良い。
+基幹部分を\verb+cu+とし、使用する擬ポテンシャルとして
+カレントディレクトリにある\verb+ps-Cu-pbe+と
+対応する初期電荷分布ファイルとして\verb+ps-Cu-pbe.ichr+をを1番目の原子種に
+使用することにした場合、
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+# file map data
+&filemap
+basename = cu,
+number_PP_file = 1
+/
+ps-Cu-pbe ps-Cu-pbe.ichr
+\end{verbatim}
+\hrule\vspace{5mm}
+とする。
+
+\section{構造最適化プログラムの実行}
+
+擬ポテンシャルはxTAPP-testに付属のps-Cu-pbeを用いる。これに対応する原子電荷のデータは
+ps-Cu-pbe.ichrである。これらはPSディレクトリ以下にある。これらをあらかじめ
+カレントディレクトリにコピーしておく。
+
+まず、初期化プログラム\verb+inipot+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。同様な構造で一度動かせば良く、毎回実行する必要はない。
+
+\verb+inipot+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu.cg
+$ mpirun ./inipot > inipot.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで1 MPI processをつかって\verb+inipot+が動く。
+ログはinipot.logに回収している。
+実行が正常に終わるとカレントディレクトリにいくつかの中間ファイルが作成される。
+
+次に構造最適化を行うプログラム\verb+cgmrpt+を動かす。
+プログラムはカレントディレクトリにコピーしてあるものとする。
+mpirunに渡すランクファイルを6corefproc.rkfとしておく。これの例は
+xTAPP-testにあるが本質的に実行環境依存である。例えば
+バッチシステムが動いている場合には必要ないはずである。
+
+2 MPI processで計算を実行させる入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu.cg
+$ mpirun -np 2 -rf 6corefproc.rkf ./cgmrpt > cgmrpt.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。このコマンドで2 MPI processをつかって\verb+cgmrpt+が動く。
+ログはcgmrpt.logに回収している。
+
+この実行においては波動関数、ローカルポテンシャル、電荷密度、結果のサマリがそれぞれ
+\vspace{5mm}\hrule
+\begin{verbatim}
+cu.wfn
+cu.lpt
+cu.rho
+cu.str
+\end{verbatim}
+\hrule\vspace{5mm}
+に保存される。これらサフィックスの詳細は''programs.tex''を参照すること。
+
+\subsection{フェルミ面を描画する}
+
+波動関数ファイルにある軌道エネルギーからフェルミ面を描画するためのツールが
+xTAPP-util/fldtoolにあるwfn2eeである。
+
+このツールでは、拡張ゾーンに拡大して描画できる。立方体の拡張ゾーンに拡張し、
+そのゾーンを$32\times 32\times 32$で分割して、ゾーンの中心をちょうどGamma点に
+なるようにすると、wfn2eeの使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ wfn2ee cu '1 1 0' '1 0 1' '0 1 1' '-16 -16 -16' '32 32 32'
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるcu.wfnが処理されて、そこからOpenDXへ渡せるデータファイルが
+作成される。ファイル名は、\verb@cu.([0-9]+).ee.dx@の形をとっており、
+()内はバンドインデックスである。
+
+これらのファイルにはそれぞれのバンドの軌道エネルギーのk点依存性が入っているから、
+これらのデータのisosurfaceをフェルミエネルギーにおいて描画すればそれはフェルミ面である。
+
+なお、フェルミ面は6番目のバンドにある。フェルミエネルギーはcu.strに保存されている。
+また描画を行うためのOpenDXのネットワーク例がxTAPP-test/opendxにあるplotee.netである。
+
+\section{バンド図と波動関数の$k$点依存性を描く}
+
+\subsection{トレースする$k$点の決定}
+
+バンド図を描くために必要なトレースする特殊$k$点の位置を、逆格子を単位に
+\begin{enumerate}
+\item G (1,0,0)
+\item X (1, 1/2, 1/2)
+\item K (3/4, 3/8, 3/8)
+\item G (0,0,0)
+\item L (1/2, 1/2, 1/2)
+\item K (3/4, 3/8, 3/8)
+\item W (3/4, 1/4, 1/2)
+\item X (1/2, 0, 1/2)
+\end{enumerate}
+と設定し、それぞれの間の分点を
+\begin{enumerate}
+\item GX 10
+\item XK 5
+\item KG 10
+\item GL 10
+\item LK 10
+\item KW 5
+\item WX 5
+\end{enumerate}
+と設定する。最初の$\Gamma$点, X点の位置が第一ブリュアンゾーンの中にないのは
+追跡する$k$点を一筆書きにするためである。
+
+\subsection{入力データの準備}
+
+次にバンドを計算するプログラム\verb+vbpef+が必要とするセクション\verb+trace band data+を
+作成し、構造最適化に使った入力データに付け加える。
+
+作成するデータは7区間分であるから
+\vspace{5mm}\hrule
+\begin{verbatim}
+# trace band data
+ &trace_band
+ distrib_mode = none,
+ output_wave_function = 1,
+ number_trace_block = 7
+ /
+    G    X    K      G    L    K      W     X
+   1.0  1.0  0.750  0.0  0.5  0.750  0.75  0.5
+   0.0  0.5  0.375  0.0  0.5  0.375  0.25  0.0
+   0.0  0.5  0.375  0.0  0.5  0.375  0.50  0.5
+      10    5     10   10   10      5     5
+\end{verbatim}
+\hrule\vspace{5mm}
+である。各列に$k$点のシンボルと位置を指定している。最後の列は区間毎の分割数である。
+これをもとのcu.cgに付け加えてcu.pefとしておく。
+
+次に\verb+main data+セクションにおいて、namelistの\verb+&tappinput+の
+\verb+initial_lpt+を1に変更して、\verb+vbpef+が構造最適化時に
+計算済みのローカルポテンシャルを読み込むように設定しておく。また\verb+store_wfn+を0に
+変更しておく。
+
+\subsection{バンド計算プログラムの実行}
+
+すでに電子状態計算本体で動かして、必要なファイルを生成させてあるはずなので
+初期化プログラム\verb+inipot+を再度動かす必要はない。
+同様な構造で一度動かせば良いからである。
+
+バンド計算プログラム\verb+vbpef+を動かす。プログラムはカレントディレクトリ
+にコピーしてあるものとする。このプログラムは収束済みのローカルポテンシャルを必要とするので
+注意すること。
+
+\verb+vbpef+は作った入力ファイルを論理機番$10$から読み込む。
+sh系での入力コマンドは
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ export FORT10=./cu.pef
+$ mpirun -np 2 -rf 6corefproc.rkf ./vbpef > vbpef.log
+\end{verbatim}
+\hrule\vspace{5mm}
+
+である。このコマンドで2 MPI processをつかって\verb+vbpef+が動く。
+ログはvbpef.logに回収している。
+
+この実行においては\verb+vbpef+の追跡したk点の固有値データは\verb+cu.band+に、
+そのk点の波動関数は\verb+cu.wfk+にそれぞれ格納される。
+これらサフィックスの詳細は''programs.tex''を参照すること。
+
+\subsection{バンド図を作成する}
+
+諏訪氏が開発したものを多少改変したバンド図作成ツールvbpef2gp-lsdaに
+よって、追跡したk点の固有値データからバンド図を描くことができる。
+Cuの場合、フェルミエネルギーを0にとってプロットしたいので、cu.strにある
+フェルミエネルギーを読み取ってeV単位に書き直したものを\verb+[EF]+と
+すると、vbpef2gp-lsdaの使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ vbpef2gp-lsda -fcu -e[EF] ./cu.band
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるcu.bandが処理されて
+cu.gp、cu.dat、cu.kptが作成される。
+次にgnuplotでcu.gpを処理するとバンド図がgnuplotで作成される。
+
+\subsection{波動関数を描画する}
+
+xTAPP-util/fldtoolにあるwfk2dxによって\verb+cu.wfk+にある
+追跡したk点の波動関数（厳密には擬波動関数）を描画できる。
+
+描画は基本セルではなく、立方体に拡張したセルで
+行う。また、cell periodic function, $u_{i,\mathbf{k}}(\mathbf{r})$,
+ではなくブロッホ関数, $\exp(i\mathbf{k}\cdot\mathbf{r})u_{i,\mathbf{k}}(\mathbf{r})$, の方を出力させる。
+そして、この拡張したセルを50,50,50の実空間メッシュで切ることにする。また、波動関数の位相はできるだけ
+実にとる。
+
+wfk2dxの使用方法は
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ wfk2dx -p -r cu.wfk '1 1 -1' '1 -1 1' '-1 1 1' '0 0 0' '50 50 50' > cu.wfk.log
+\end{verbatim}
+\hrule\vspace{5mm}
+である。これでカレントディレクトリにあるcu.wfkが処理されて、そこからOpenDXへ渡せるデータファイルが
+作成される。ファイル名は、\verb@cu.wfk.([0-9]+).([0-9]+).dx@の形をとっており、
+1番目の()内はバンドインデックス、2番目の()内はk点の番号である。
+このファイルの中の軌道エネルギーはeV単位である。
+
+xTAPP-testにはこれらのOpenDX用ファイルを可視化するためのネットワークの例が opendx/plotwfk.net
+として含まれている。
+
+描画においては、ブロッホ関数を描画しているため、セルの中で波動関数は周期的ではないことに
+注意すること。周期的にしたければk点の分割と合致するセルが必要であるが、それは大抵
+大きなセルである。
+\end{document}

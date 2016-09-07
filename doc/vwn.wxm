@@ -1,0 +1,17 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 0.8.5 ] */
+
+/* [wxMaxima: input   start ] */
+ucy(lcy) := lcy*lcy + b*lcy + c;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+epsc(lcy,ucy) := A/2*(log(lcy*lcy/ucy) + 2*b/Q*atan(Q/(2*lcy+b))-b*y0/ucy0*(log((lcy-y0)*(lcy-y0)/ucy) + 2*(b+2*y0)/Q*atan(Q/(2*lcy+b))));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fortran(subst(ucy,lcy*lcy + b*lcy + c, diff(epsc(lcy,ucy(lcy)),lcy,1))/2*lcy);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

@@ -1,0 +1,155 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 12.04.0 ] */
+
+/* [wxMaxima: input   start ] */
+load(f90);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f1(ef) := (v1+v2+v3+v4)*unit;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad1.f90",f90(diff(f1(ef),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f2(ef) := (v1+v2+v3+v4)*unit
+-unit*(e1-ef)*(e1-ef)*(e1-ef)
+/(e1-e4)/(e1-e3)/(e1-e2)
+*(4*v1+(ef-e1)*((v4-v1)/(e4-e1)
++(v3-v1)/(e3-e1)
++(v2-v1)/(e2-e1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad2.f90",f90(diff(f2(ef),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f3(ef) := unit*((ef-e1)*(ef-e4)*(ef-e4)
+/(e3-e1)/(e2-e4)/(e1-e4)
+*(3*v4+(ef-e4)*(v2-v4)/(e2-e4)
++v3+(ef-e4)*(v1-v4)/(e1-e4)
++(ef-e3)*(v1-v3)/(e1-e3))
++(ef-e4)*(e2-ef)*(ef-e3)
+/(e2-e4)/(e2-e3)/(e1-e3)
+*(2*v4+(ef-e4)*(v2-v4)/(e2-e4)
++2*v3+(ef-e3)*(v2-v3)/(e2-e3)
++(ef-e3)*(v1-v3)/(e1-e3))
++(ef-e3)*(ef-e3)/(e1-e3)/(e2-e3)
+*(3*v3+(ef-e3)*(v2-v3)/(e2-e3)
++v4+(ef-e3)*(v1-v3)/(e1-e3)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad3.f90",f90(diff(f3(ef),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f4(ef) := unit*(e3-e4)/(e1-e4)
+*(v2+(e3-e4)*(v1-v4)/(e1-e4)
++v3+2*v4);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad4.f90",f90(diff(f4(ef),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f5(ef) := -unit*(e4-ef)*(e4-ef)*(e4-ef) 
+/(e1-e4)/(e2-e4)/(e3-e4)
+*(4*v4+(ef-e4)*((v3-v4)/(e3-e4)
++(v1-v4)/(e1-e4)
++(v2-v4)/(e2-e4)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad5.f90",f90(diff(f5(ef),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f1e(ef,v1,v2,v3,v4) := (v1+v2+v3+v4)*unit;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetra1e.f90",f90(f1e(ef,1,1,1,1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad1e.f90",f90(diff(f1e(ef,1,1,1,1),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f2e(ef,v1,v2,v3,v4) := (v1+v2+v3+v4)*unit
+-unit*(e1-ef)*(e1-ef)*(e1-ef)
+/(e1-e4)/(e1-e3)/(e1-e2)
+*(4*v1+(ef-e1)*((v4-v1)/(e4-e1)
++(v3-v1)/(e3-e1)
++(v2-v1)/(e2-e1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetra2e.f90",f90(f2e(ef,1,1,1,1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad2e.f90",f90(diff(f2e(ef,1,1,1,1),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f3e(ef,v1,v2,v3,v4) := unit*((ef-e1)*(ef-e4)*(ef-e4)
+/(e3-e1)/(e2-e4)/(e1-e4)
+*(3*v4+(ef-e4)*(v2-v4)/(e2-e4)
++v3+(ef-e4)*(v1-v4)/(e1-e4)
++(ef-e3)*(v1-v3)/(e1-e3))
++(ef-e4)*(e2-ef)*(ef-e3)
+/(e2-e4)/(e2-e3)/(e1-e3)
+*(2*v4+(ef-e4)*(v2-v4)/(e2-e4)
++2*v3+(ef-e3)*(v2-v3)/(e2-e3)
++(ef-e3)*(v1-v3)/(e1-e3))
++(ef-e3)*(ef-e3)/(e1-e3)/(e2-e3)
+*(3*v3+(ef-e3)*(v2-v3)/(e2-e3)
++v4+(ef-e3)*(v1-v3)/(e1-e3)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetra3e.f90",f90(f3e(ef,1,1,1,1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad3e.f90",f90(diff(f3e(ef,1,1,1,1),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f4e(ef,v1,v2,v3,v4) := unit*(e3-e4)/(e1-e4)
+*(v2+(e3-e4)*(v1-v4)/(e1-e4)
++v3+2*v4);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetra4e.f90",f90(f4e(ef,1,1,1,1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad4e.f90",f90(diff(f4e(ef,1,1,1,1),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+f5e(ef,v1,v2,v3,v4) := -unit*(e4-ef)*(e4-ef)*(e4-ef) 
+/(e1-e4)/(e2-e4)/(e3-e4)
+*(4*v4+(ef-e4)*((v3-v4)/(e3-e4)
++(v1-v4)/(e1-e4)
++(v2-v4)/(e2-e4)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetra5e.f90",f90(f5e(ef,1,1,1,1)));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+with_stdout("tetrad5e.f90",f90(diff(f5e(ef,1,1,1,1),ef)));
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

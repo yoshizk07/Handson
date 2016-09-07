@@ -1,0 +1,313 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{開発者向け文書}
+\author{鳥取大学 工学部　吉本芳英}
+\begin{document}
+\maketitle
+
+\section{コードの書き方の規約}
+
+\begin{itemize}
+\item Fortran 90以降の自由形式で記述すること。
+\item 実効性能上の大きな理由がない限り、副プログラム（サブルーチン、関
+      数）はすべて明示的引用仕様を持っていること。このために、これらはす
+      べて適切なモジュールのモジュール内副プログラムとし、引用側はまず対
+      応モジュールをuseすることで、引用仕様を取得するようにするべきである。
+\item プログラムのインデントなどの書式は既存のものと統一されていること。
+\item 原則としてモジュールで共有変数を作成することを避けること。一群の変
+数を複数の副プログラムの間で受け渡すよい方法は、構造体を作成してそれを使
+うことである。
+\item 引数の宣言において、\verb+intent+を宣言することが望ましい。
+\item \verb+#ifdef+マクロでプログラムの機能を過度に調節するのは好ましくな
+      い。できるだけ入力ファイルで調節可能とするべきである。
+\item 機種別にチューニングされたコードと機種依存しないコードの分離を意識してコードを書くこと。
+      機種別コードは別ファイルに集約することが望ましい。
+\item コードを付け加える、変更する際にはそのファイルの先頭の著作権表示も合わせて更新すること。
+\item 新機能を実装した際には、その定式化をformalism.texに記録するかコードに適切な文献
+      を記録すること。
+\item 他のプログラムからコードを借用する際には、
+ \begin{itemize}
+  \item 借用するコードのライセンスに注意する。GPLとの互換性に注意すること。なお、ライブラリなどは借用せず別体としてリンクできるようにするのが良い。
+  \item 借用したコードはできるだけ別なファイルに分離して管理する。
+  \item 借用したコードは後で分離できるように配慮する。後でxTAPP自体のライセンス条件を変更する際に必要になる。
+ \end{itemize}
+\end{itemize}
+
+\section{コードへの機能追加}
+
+できる限り追加した機能のテスト入力とその正常な結果をパッケージxTAPP-testに
+追加しておくべきである。
+
+\section{プログラムにでてくる各種グリッド}
+\subsection{3次元メッシュの表現とパックされた表現 }
+
+平面波で展開されるデータには3次元メッシュの上の表現と平面波基底の長さの順
+に1次元で並べたパックされた表現とがある。 3次元メッシュにはさらに、FFTに
+かけられる\verb+1:2*n+のインデックスを持つ物と、 FFTにはかけられない、\verb+-n:n+のイン
+デックスを持つ物がある。
+
+\subsection{イオンのlocal ポテンシャルを展開するグリッド }
+
+kkgにメッシュ点のデータが入っている。メッシュ点の総数はnkfである。kkgは対
+称性でつながっているG点をまとめて表現している。対応するイオンのポテンシャ
+ルデータは既約なものだけを並べた物としている。
+
+\subsection{イオンの$Q_{i,j}(\mathbf{G})$を展開するグリッド }
+\begin{itemize}
+ \item kqgにメッシュ点のデータが入っている。データは整数値である。メッシュ点の総数はnkcである。
+ \item kqgは対称性を考慮していない。つまり可約である。
+ \item qgkはkqgを逆格子bbを使って実数値に直した物である。 
+\end{itemize}
+
+\subsection{計算している系のscreened local ポテンシャルを展開するグリッド }
+\begin{itemize}
+\item kfにメッシュ点$\mathbf{G}$のデータが入っている。メッシュ点の総数はnkfxaである。
+\item affに$G^2$が入っている。
+\item kfは対称性でつながっているG点を識別しない。
+\item vbscf()でのtrylptはメッシュ上での表現である。インデックスの範囲は\verb+-nv[xyz]:nv[xyz]+である。 
+\end{itemize}
+
+\subsection{波動関数を展開するグリッド }
+\begin{itemize}
+\item kgにメッシュ点$\mathbf{k+G}$のデータが入っている。
+メッシュ点の総数はnkmである。これらはk点ごとに値が違う。
+\item 対称性は考慮されていない。 
+\end{itemize}
+
+\subsection{パックされた表現からメッシュ上の表現への変換 }
+\vspace{5mm}\hrule
+\begin{verbatim}
+do ig=1, nkfxa
+  i1 = kf(1,ig)
+  i2 = kf(2,ig)
+  i3 = kf(3,ig)
+  j1 = mod(nrx2+i1,nrx2)+1
+  j2 = mod(nry2+i2,nry2)+1
+  j3 = mod(nrz2+i3,nrz2)+1
+  ...
+end do
+\end{verbatim}
+\hrule\vspace{5mm}
+とすると、\verb+i[123]+は\verb+-nv[xyz]:nv[xyz]+のメッシュ点となり、
+\verb+j[123]+はFFTに
+対応する\verb+1:2nr[xyz]+のメッシュ点となる。 FFTに対応するメッシュではもとの負
+のインデックスをもつ点が\verb+2nr[xyz]+で折り返されて入っていることに注意。
+
+\subsection{FFT用のメッシュでのnl[xyz]とnr[xyz] }
+
+FFT用のメッシュの場合、メモリ上でのレイアウトを最適化すると性能が向上する。
+このため配列のサイズそのものnl[xyz]と実際に使う範囲nr[xyz]が分離されてい
+る。
+
+\subsection{fftgrid.hで定義しているマクロ}
+ここには、\verb+FFT_*+というマクロが定義されている
+
+アーキテクチャによってFFTの性能が出る複素数の配列のメモリレイアウトが、実
+部と虚部で隣り合う実数の配列であるケースと、実部の配列と虚部の配列の対で
+あるケースの二種類がある。これを切り替えるためのマクロが定義されている。
+本来三次元であるデータを記憶列結合で一次元化して扱うものと、三次元配列と
+して扱うものに二種類がある。また、複数のFFTデータを、次元を一つ追加して単
+一の配列にまとめるためのマクロもある。
+
+また、FFTを掛ける配列はキャッシュコンフリクトやバンクコンフリクトの対策上、
+本来のFFTのメッシュサイズよりも少し大きめにとる必要がある。この少し大きめ
+にとるサイズの計算をするマクロもここにある。(\verb+FFT_PAD_N[XYZ]+)
+
+マクロを使う例を波動関数のフーリエ変換で示すと、 
+\vspace{5mm}\hrule
+\begin{verbatim}
+#include "fftgrid.h"
+ 
+nlx = FFT_PAD_NX(nwx2)
+nly = FFT_PAD_NY(nwy2)
+nlz = FFT_PAD_NZ(nwz2)
+allocate(FFT_A3D_DEFSZ(wfr,nlx,nly,nlz))
+ 
+call fft3_init(nwx2,nwy2,nwz2,nlx,nly,nlz,fs)
+ 
+do ig=1,nkm
+   k1=kg(1,ig)
+   k2=kg(2,ig)
+   k3=kg(3,ig)
+   k1=mod(k1+nwx2,nwx2)+1
+   k2=mod(k2+nwy2,nwy2)+1
+   k3=mod(k3+nwz3,nwz2)+1
+   FFT_A3D_RL(wfr,k1,k2,k3) = wfg(ig,1)
+   FFT_A3D_IM(wfr,k1,k2,k3) = wfg(ig,2)
+end do
+ 
+call fft3_bw(fs,wfr,ztmp)
+\end{verbatim}
+\hrule\vspace{5mm}
+となる。 
+
+\section{プログラムにでてくる構造体}
+
+xTAPPが内部で使っている構造体について
+\begin{itemize}
+\item イオンの擬ポテンシャルデータを収容する\verb+bspot_for_atm+ (bsplpot.F90)
+\item SCF iterationの制御変数を収容する\verb+scfctrl_struct+ (scfloop.F90)
+\item 各種グリッドを収容する \verb+meshgrid_struct+ (meshgrid.F90)
+\item 各種の電子状態のエネルギー値を収容する \verb+elec_energy+ (types.f90)
+\item 各種の電子状態のエネルギー値のスケール微分を収容する \verb+elec_senergy+ (types.f90)
+\item k点（とspin)一個あたりの波動関数を収容する\verb+wfn_for_k+ (types.f90)
+\item 原子ごとの$Q_{ij}(\mathbf{G})$を収用する\verb+qg_for_atm+ (types.f90) 
+\item サンプル$k$点の情報を収容する\verb+irdkpt_struct+ (subr\_kpoint.F90)
+\end{itemize}
+
+\subsection{構造体bspot\_for\_atm}
+\begin{description}
+\item[name:] 擬ポテンシャルの名前
+\item[nl:] 軌道角運動量の数
+\item[nr:] 軌道ごとのレファレンスエネルギーの数
+\item[ifncpp:] 擬ポテンシャルがノルム保存なら真
+\item[ifachg:] 擬ポテンシャルに有効な初期電荷データがあれば真
+\item[ifcr:] Ultrasoft 儀ポテンシャルのコア電荷分布データの有無のフラグ
+\item[zo:] イオンの電荷
+\item[zn:] 原子核の電荷
+\item[a1,a2,a3,a4:] ローカルポテンシャルの長距離成分のfitデータ
+\item[rc:] Non local パートのカットオフの最大値（未使用）
+\item[nsmpl:] 擬ポテンシャルのNon local パートのカットオフの最大値までのlog mesh数
+\item[vgsr:] ローカルポテンシャルの短距離成分のbspline fit係数
+\item[ccg:] NLCCの内核電荷のbspline fit係数
+\item[achg:] 初期電荷分布のbspline fit係数
+\item[ddi:] イオンの$D_{ij}$
+\item[qqr:] $Q_{ij}$ 擬ポテンシャルファイルから読んだもの
+\item[qq:] $Q_{ij}$ 再計算したもの
+\item[vpj:] $\beta_{lm}(g)$のbspline fit係数
+\item[qj:] $Q_{ij}(\mathbf{G})$のうち動径成分の bspline fit係数
+\item[nprj:] プロジェクタの数
+\item[ip2l:] プロジェクタ番号から軌道角運動量番号への変換表
+\item[ip2r:] プロジェクタ番号からリファレンス番号への変換表
+\item[ip2m:] プロジェクタ番号から角運動量$(\ell, m)$を通算する番号への変換表。
+	   同一の$\ell$を持つ角運動量は連続に並べる。
+\item[l2ph:] 与えた軌道角運動量番号をもつ角運動量を通算する番号での最初の番号への変換表。
+\item[l2pt:] 与えた軌道角運動量番号をもつ角運動量を通算する番号での最後の番号への変換表。
+\end{description}
+
+\subsection{構造体irdkpt\_struct}
+\begin{description}
+\item[sk:] $k$点の位置。逆格子の基本ベクトル単位。
+\item[kp:] $k$点の位置。skにnkをかけて整数にしたもの。
+\item[nsg:] その$k$点を動かさない対称操作の数
+\item[ngir:] その$k$点を動かす既約な対称操作の数
+\item[sgrg:] その$k$点を動かさない対称操作の番号リスト。負の番号は時間反転操作を含めることを意味する。
+\item[irrg:] その$k$点を動かす対称操作で既約なものの番号リスト。負の番号は時間反転操作を含めることを意味する。
+\end{description}
+
+ある既約な$k$点と対象操作でつながる$k$点を列挙したい場合、\verb+irrg+を使えば良い。
+またある既約な$k$点のブリュアンゾーン積分での重みは\verb+ngir+である。
+したがって、\verb+rco+の代わりにこれを用いるべきである。
+
+\section{プログラムにでてくる重要変数}
+
+\subsection{\texttt{pby(lmax**2,maxr,nsi,nw,nks,nspin)}}
+\[ \sum_{\mathbf{G}}\beta^\ast_{\tau,p}(\mathbf{G})\phi_{\mathbf{k},\sigma,n}(\mathbf{G}) \]
+
+\subsection{電荷$\rho$とポテンシャル$V$}
+
+\verb+va+: 単位胞の体積$\Omega$
+
+\begin{itemize}
+\item 実空間
+  \[
+    \texttt{rho(k1, k2, k3)} = \rho(\mathbf{r})
+  \]
+  \[
+    \texttt{vr(k1, k2, k3)} = V(\mathbf{r})
+  \]
+\item 逆空間
+  \[
+    \texttt{vg(k1, k2, k3)} = \frac{1}{\Omega} V(\mathbf{G})
+  \]
+\end{itemize}
+
+一般に
+\[
+  A(\mathbf{G}) = \int_{\Omega} A(\mathbf{r}) e^{-i \mathbf{G}\cdot\mathbf{r}} d\mathbf{r}
+\]
+として、$A$の数値表現を
+\[
+  \texttt{A(k1, k2, k3)} = A(\mathbf{r})
+\]
+とすると、\texttt{A(k1, k2, k3)}のFFT順変換は$1/\Omega A(\mathbf{G})$になる。
+
+このために、プログラムではイオン種\verb+ikd+$=\tau$のローカルポテンシャルを
+\[
+  \texttt{vg(ig,ikd)} = \frac{1}{\Omega} V^{\tau}(G)
+\]
+と定義している。Partial core chargeである\texttt{ccg(ig,ikd)}も同様である。
+
+\subsection{FFTの定義}
+
+\begin{itemize}
+\item 順変換(\verb+fft3_fw+)
+  \[
+    \omega_1=\frac{2\pi}{n_1},\omega_2=\frac{2\pi}{n_2},
+    \omega_3=\frac{2\pi}{n_3}
+  \]
+  \[
+    H(l_1,l_2,l_3) = \frac{1}{n_1 n_2 n_3}
+    \sum_{m_1=0}^{n_1-1}\sum_{m_2=0}^{n_2-1}\sum_{m_3=0}^{n_3-1}
+    h(m_1,m_2,m_3)
+    e^{-i\omega_1 l_1 m_1}e^{-i\omega_2 l_2 m_2}
+    e^{-i\omega_3 l_3 m_3}
+  \]
+\item 逆変換(\verb+fft3_bw+)
+  \[
+    \omega_1=\frac{2\pi}{n_1},\omega_2=\frac{2\pi}{n_2},
+    \omega_3=\frac{2\pi}{n_3}
+  \]
+  \[
+    h(l_1,l_2,l_3) =
+    \sum_{m_1=0}^{n_1-1}\sum_{m_2=0}^{n_2-1}\sum_{m_3=0}^{n_3-1}
+    H(m_1,m_2,m_3)
+    e^{i\omega_1 l_1 m_1}e^{i\omega_2 l_2 m_2}
+    e^{i\omega_3 l_3 m_3}
+  \]
+\item Fortran なのでプログラム上の添字は1足した物になる。
+\end{itemize}
+
+
+\subsection{\texttt{vpj(ig,ir,il,ikd)}}
+
+\texttt{vpj(ig,ir,il,ikd)}は原子種\texttt{ikd},軌道角運動量$l = $\texttt{il},リファレンス\texttt{ir}に
+対する、
+\[
+  4\pi\int_0^{\infty}dr r^2 j_l(kr) \beta_l(r)
+\]
+である。$\beta_l$はUltrasoft Pseudo Potentialでのnon-local partの射影ベクトル。
+ポテンシャルデータでは$\beta_l$は$r\beta_l$で与えられていることに注意せよ。
+
+\[
+  \beta_{lm}(\mathbf{k}) := \int d^3r\beta_{lm}(\mathbf{r})e^{i\mathbf{k}\cdot\mathbf{r}};\quad -l\le m \le l
+\]
+は、
+\[
+  i^l Y_{lm} 4\pi\int_0^{\infty}drr^2j_l(kr) \beta_l(r);\quad -l\le m \le l
+\]
+で張られるので、これば$\beta_l$の逆フーリエ変換(ブラベクトル)を計算するのに
+用いられる。
+
+
+\section{プログラムのループ変数}
+\begin{description}
+\item[ig:] 大きさ順にならべられた$\mathbf{G}$点。$\mathbf{k}+\mathbf{G}$でも使う。
+\item[is:] スピン
+\item[iks:] k点とスピン(k点だけでも使っている)
+\item[ik:] k点
+\item[il:] 軌道角運動量 (l=1がsに対応)
+\item[ir:] レファレンスエネルギー
+\item[im:] 磁気角運動量をs, p,...の順にならべたもの
+\item[ib,jb:] バンド番号
+\item[it:] 原子の番号
+\item[ikd:] 原子種の番号
+\end{description}
+
+\end{document}

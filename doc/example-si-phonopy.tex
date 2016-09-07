@@ -1,0 +1,141 @@
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+
+\title{実行例: Siのフォノン分散}
+\author{東京大学　情報理工　コンピュータ科学専攻 吉本 芳英}
+\begin{document}
+\maketitle
+
+\section{はじめに}
+
+この実行例ではSiのフォノン分散をphonopyを用いて計算する。
+なおこの配布パッケージには入力例と出力例が同梱されている。
+\verb+sample/example-si-phonopy+を見ること。
+
+phonopyは標準モード(VASP)で使う。
+xTAPP-util/phonopy以下にはこのための入出力変換ツールが用意されている。
+
+\section{入力データの用意}
+
+phonopyには基本格子の情報をPOSCARファイルで渡す。
+そのため、xTAPPの入力si.cgをPOSCARファイルに変換する。
+xTAPPに含まれている入力ファイル変換ツール\verb+xticonv+を用いる。
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ xticonv poscar si.cg > POSCAR
+\end{verbatim}
+\hrule\vspace{5mm}
+
+とする。
+
+\section{phonopyでスーパーセル計算の入力データを作る}
+
+$4\times 4\times 4$セルでの計算を行なう。
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ phonopy -d --dim="4 4 4"
+\end{verbatim}
+\hrule\vspace{5mm}
+
+とすると、カレントディレクトリに\verb+disp.yaml+が作成される。
+この中に、必要なスーパーセルの情報が入っている。これを
+xTAPPの入力ファイルに変換するには、格子の情報以外で計算上必要な情報を書き込んだ
+テンプレートファイル(\verb+si.tmpl+)をxTAPP-utilの
+ツール\verb+phonopy/disp2xti.py+で
+を変換する。\verb+si.tmpl+は
+\begin{enumerate}
+ \item テンプレートファイル中の\verb+{LATTICE_LIST}+,\verb+{NUMBER_ATOM}+を
+     \verb+disp.yaml+にあるスーパーセルと原子数で書き換え
+ \item \verb+{BASENAME}+を生成したxTAPP入力ファイルの基幹部で書き換え
+ \item \verb+# atom data+セクションのうち原子位置の部分を\verb+disp.yaml+の内容から
+       生成してテンプレートの最後の行の後ろに書き加える
+\end{enumerate}
+と変換される。この変換の際に元素記号をxTAPPの入力での
+元素の番号に変換しなければならないが、カレントディレクトリにasym2num.yaml
+を作成して、これには
+\begin{verbatim}
+ Si: 1
+\end{verbatim}
+と書き込んでおく。
+
+\subsection{テンプレート作成上の注意点}
+
+テンプレートファイルの最後に\verb+# atom data+セクションをおくことを
+忘れないこと。ツール\verb+disp2xti.py+はテンプレートの末尾に
+原子位置データを追加するためである。
+
+また、\verb+phonopy+が標準で用意している微小変位は
+大変に小さいため(0.01\AA)対応する力も小さい。したがって精度良く力を計算
+できるように、平面波のカットオフはかなり大きくとり、同時にSCF計算の
+収束条件も厳しくする必要がある。
+
+あるいは逆に\verb+phonopy+に問題が出ない程度に大きめ(0.04\AA)の微小変位を
+使うように指示する方法もある。数値微分は計算に用いる変位が小さすぎても精度が
+落ちるので注意が必要である。
+phonopyに大きめの変位を使わせる場合
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ phonopy -d --dim="4 4 4" --amplitude 0.04
+\end{verbatim}
+\hrule\vspace{5mm}
+などとする。
+
+生成される変位によって元の対称性はこわされるので、対称性行列は
+変化する。大きなスーパーセル計算が望ましいが、その場合$\Gamma$点だけの
+$k$点で良いので、自明な対称性だけの指定で計算量的には問題ないはずである。
+
+\subsection{テンプレートから入力ファイルの生成}
+
+テンプレートから入力ファイルを生成するには
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ disp2xti.py si
+\end{verbatim}
+\hrule\vspace{5mm}
+
+とする。こうすることで入力ファイルが\verb+si-[0-9][0-9][0-9].cg+の名前で
+順番にカレントディレクトリに作成される。この例の場合、\verb+si-001.cg+だけが
+出力されるはずである。つまり、一つの変位の計算だけで良い。基本セルで既約な原子が
+1つだけで等方的な系なのでこれで良い。
+
+\section{xTAPPの実行}
+
+xTAPPで入力ファイルを処理して、出力ファイル\verb+si-[0-9][0-9][0-9].str+を
+すべて\verb+disp.yaml+があるディレクトリに回収する。
+
+\section{phonopyの入力ファイルの作成}
+
+ツール\verb+xTAPP-util/phonopy/disp2fset.py+で回収した出力ファイルからphonopyで処理するファイル\verb+FORCE_SETS+を
+作成する。\verb+disp.yaml+と回収した出力ファイルがあるディレクトリで
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ disp2fset.py -p [strconv path] si
+\end{verbatim}
+\hrule\vspace{5mm}
+
+とするとカレントディレクトリに\verb+FORCE_SETS+ができる。
+ここで\verb+[strconv path]+はxTAPP付属のツール \verb+strconv+ への
+パスである。
+
+\section{phonopyでフォノン分散、状態密度などを描く}
+
+詳細はphonopyの手引きを確認すること。
+なお、標準(VASPモード)では周波数の単位がTHzになっているはずである。
+
+\vspace{5mm}\hrule
+\begin{verbatim}
+$ phonopy -p band.conf
+$ phonopy -p mesh.conf
+\end{verbatim}
+\hrule\vspace{5mm}
+
+\end{document}

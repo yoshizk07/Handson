@@ -1,0 +1,1510 @@
+% $Id: inputformat.tex,v 1.1.2.1 2013-02-11 02:42:51 yosimoto Exp $
+%
+\documentclass{jarticle}
+\usepackage{longtable}
+\addtolength{\oddsidemargin}{-15mm}
+\addtolength{\evensidemargin}{-15mm}
+\addtolength{\textwidth}{30mm}
+\addtolength{\topmargin}{-15mm}
+\addtolength{\textheight}{30mm}
+\begin{document}
+
+\section{入力ファイルフォーマット}
+
+入力ファイルはセクションをつなげたものである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+セクションa
+セクションb
+セクションc
+...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+セクションは\verb+#+で始まりセクションの名前が続く行で開始され、
+次のセクションの始まりの前で終了する。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# セクション名
+...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+プログラムによって必要なセクションは異なる。
+セクションを並べる順番は任意である。
+
+入力はセクションごとにrewindされながら読み込まれるため、
+必ずファイルにしておく必要がある。
+rewindできない標準入力から読み取ることは出来ない。
+
+セクション内部のデータはfortranのnamelist入力とその他のデータからなっている。
+namelist入力においては、入力しないパラメタは省略でき、またパラメタの指定の順番は
+任意である。
+
+なお、単位は断りがない限り原子単位系である。
+
+また、namelist中の文字列を引用符でくくらないとならない処理系があるので注意が必要である。
+gfortranはそのような例である。
+
+\pagebreak
+
+\section{file map data セクション}
+オプションのセクションである。
+このオプションのセクションを設定すると、プログラムが出力するファイルが
+fortranの事前接続されたファイルにはならず、その名前がここで指定するbasenameと
+それぞれの内容に対応する拡張子をつないだものとなるファイルになる。
+この拡張子は、programs.texの方で定義しているである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# file map data
+ &filemap
+ basename = 
+ number_PP_file = 
+ /
+potnam(1) rhinam(1)
+potnam(2) rhinam(2)
+...
+potnam(number_PP_file) rhinam(number_PP_file)
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+名前の内容は
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ & basename & 出力ファイルの基幹部\\
+ & number\_PP\_file & 擬ポテンシャルファイルの数\\
+ & potnam(*) & *番の擬ポテンシャルファイルの名前\\
+ & rhinam(*) & *番の原子電荷データファイルの名前(省略可能)\\
+\end{longtable}
+
+である。原子電荷データファイルを使用しない場合には省略すれば良い。
+
+\pagebreak
+
+\section{main data セクション}
+必須のセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# main data
+ &tappinput
+ ...
+ /
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+namelist \verb+tappinput+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ lattice_factor,
+ lattice_list,
+ number_spin,
+ number_component,
+ number_density,
+ spin_mode,
+ cutoff_local_potential,
+ cutoff_wave_function,
+ cutoff_uspp_q,
+ xtrap_beta,
+ cutoff_btp_a,
+ cutoff_btp_gc,
+ cutoff_btp_sigma,
+ number_element,
+ number_atom,
+ number_band,
+ extra_charge,
+ diff_spin,
+ elec_kbt,
+ number_xtrap_stage,
+ initial_wfn,
+ initial_lpt,
+ store_wfn,
+ chain_calc,
+ scf_converge,
+ scf_converge_energy,
+ scf_number_iter_1st,
+ scf_number_iter,
+ davidson_flag,
+ davidson_number_diag_1st,
+ davidson_number_diag,
+ control_uptime,
+ cutoff_bspl_fit,
+ control_q_han_win_fac,
+ control_nbsf,
+ xc_type,
+ cutoff_exch_att_rc,
+ cutoff_exch_att_rd,
+ scf_threshold_hybrid,
+ scf_threshold_noncol,
+ noncol_spin_axis,
+ compat_old_squ_norm,
+ aux_eng_type,
+ precond_thr,
+ precond_beta,
+ cutoff_precond
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+名前の内容は
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ & lattice\_factor & セルの典型的な長さ。a.u.単位。\\
+ & lattice\_list & セルの基本並進ベクトル aa(:,1),aa(:,2),aa(:,3)の順に数値を並べる。lattice\_factor単位。 \\
+a & number\_spin & スピン自由度、厳密には分離されて扱われるスピン成分の数。1: LDA、2: LSDA。デフォルトはLDA。\\
+a & number\_component & 波動関数の成分の数。1: Schr\"odinger、2: Pauli。デフォルトはSchr\"odinger。2の場合、number\_spinは1でなければならない。\\
+a & number\_density & 電荷・スピン偏極密度(ベクトル)の成分数。 1: スピン偏極密度は$0$、4: スピン偏極密度は$0$ではない(non-collinear)。4の場合、number\_componentは2でなければならない。デフォルトはcollinear。\\
+d & spin\_mode & 全スピン偏極をの固定条件。LSDAのときに有効。1: diff\_spinで固定。2: 自由。\\
+a & cutoff\_local\_potential & local potentialを展開する平面波のカットオフ波数\\
+  & cutoff\_wave\_function & 波動関数を展開する平面波のカットオフ波数\\
+a & cutoff\_uspp\_q & USPPの$Q(r)$を展開する平面波のカットオフ波数\\
+a & xtrap\_beta & Anderson extrapolationの混合パラメータ\\
+d & cutoff\_btp\_a & BTP[1]による運動エネルギー補正のパラメータ$A$。$A > 0$で補正が有効化。デフォルトでは無効。\\
+d & cutoff\_btp\_gc & BTPによる運動エネルギー補正のパラメータ$G_c$。$G_c <$cutoff\_wave\_functionであること。\\
+d & cutoff\_btp\_sigma & BTPによる運動エネルギー補正のパラメータ$\sigma$。$\sigma >0$であること。\\
+  & number\_element & 元素数\\
+  & number\_atom & 原子数\\
+  & number\_band & バンド数\\
+d & extra\_charge & 中性状態から系に加える電荷量。デフォルトで0。\\
+d & diff\_spin & spin\_mode = 1で有効となる全スピン偏極の固定値。デフォルトで0。\\
+d & elec\_kbt & 電子系の設定温度(エネルギー単位)。Fermi面のsmearingモードで解釈が異なる。デフォルトでは0。\\
+a & number\_xtrap\_stage & Anderson extrapolation の段数。
+10以下を指定すると、収束しなければ自動的にxtrap\_betaが1/2ずつ減速される。
+10を越える場合、実際の段数はこれから10を引いたものとなりまたxtrap\_betaは減速されない。\\
+d & initial\_wfn & 初期波動関数。0$^\ast$: ランダム。1: ファイルからロード。\\
+d & initial\_lpt & 初期local potential。0$^\ast$: ion由来。1:ファイルからロード。2: 原子電荷分布由来。 \\
+d & store\_wfn & 0: 波動関数は終了後破棄。1: 波動関数をストア\\
+d & chain\_calc & 0: 計算は最初から。1: 既存データから計算を継続する。2: 既存データからSCF収束だけを継続する(cgmrpt)。計算を継続する場合、波動関数とローカルポテンシャルも入力しなければならない。3: cgmrptで構造最適化した結果を引き継ぐ(vbpef, vbstm, wfn2chg, pefcos, wannierで有効)。\\
+a & scf\_converge & SCFの収束条件。local potentialの収束度。\\
+a & scf\_converge\_energy & SCFの収束条件。全エネルギーの収束度。\\
+  & scf\_number\_iter\_1st & SCFの繰り返し回数の上限。初回用。SCFが収束していなくてもこの回数で打ちきられて力の計算など次のステップへ進んでしまうので注意すること。100以上の値を使うことは通常ない。\\
+  & scf\_number\_iter & SCFの繰り返し回数の上限。SCFが収束していなくてもこの回数で打ちきられて力の計算など次のステップへ進んでしまうので注意すること。100以上の値を使うことは通常ない。\\
+a & davidson\_flag & Davidson法の減次のためのフラグ。デフォルトを使うなら$-1$をセット。正の整数なら、\verb+10.0**(-davidson_flag/10.0)+に減次のしきい値が設定される。\\
+a & davidson\_number\_diag\_1st & Davidson法の繰り返し回数。初回用。収束している波動関数のみを読み込んで、local potentialを読み込まない場合は、これを0に設定することで初回の対角化をバイパスさせて、読み込んだ波動関数を保持させ、そこからlocal potentialを構成させる。\\
+a & davidson\_number\_diag & Davidson法の繰り返し回数。\\
+  & control\_uptime & 計算時間の上限[s]。 \\
+a & cutoff\_bspl\_fit & 擬ポテンシャルデータをB spline fitする上限。\\
+d & control\_q\_han\_win\_fac & USPPの$Q(r)$をハニング窓処理する際のカットオフ。
+ \verb+cutoff_wave_function+単位。負の値で機能は無効化。2.0以上であること。
+ 真空中に染み出してくる$Q(r)$の振動成分を抑制するために使う。仕事関数の計算を行う際は必要。\\
+a &control\_nbsf & 擬ポテンシャルデータをB spline fitする際のメッシュ数\\
+a & xc\_type & 交換相関ポテンシャルのタイプ。デフォルトはPBE\\
+a & cutoff\_exch\_att\_rc & exchange計算に用いるattenuationのcutoff $R_c$。デフォルトよりも少し小さい値が良いバンドを与えることがあるので注意。パラメタの詳細はformalism.texを参照。\\
+a & cutoff\_exch\_att\_rd & exchange計算に用いるattenuationのcutoff $R_d$デフォルトよりも少し小さい値が良いバンドを与えることがあるので注意。パラメタの詳細はformalism.texを参照。\\
+a & scf\_threshold\_hybrid & hybrid汎関数に切り替える際の収束度のしきい値。100.0以上を指定すると、波動関数とローカルポテンシャルを読み込んでいない場合でも最初からhybrid汎関数で計算を行う。\\
+a & scf\_threshold\_noncol & non-collinear計算の場合であって、noncol\_spin\_axisを指定していない場合、ポテンシャルの縦成分の収束しきい値はscf\_convergeとscf\_threshold\_noncolの積となる。この値を小さくするとそれだけ縦成分を強く収束させてから全体の収束を行うようになる。小さい方が全体の収束を安定化するが小さすぎると計算時間が無駄になる。\\
+d & noncol\_spin\_axis & カーテシアン座標3成分を指定できる。ただし大きさは自動的に規格化されるので意味を持たない。デフォルトでゼロベクトルとなっており、この場合には局所スピンベクトル密度の絶対値でスピン分極度が計算される。このベクトルがゼロでない場合、局所スピンベクトル密度のこの方向への射影が代わりに局所的なスピン分極度となる。collinerになる系で用いるとSCFの収束が良くなる。\\
+d & compat\_old\_squ\_norm & TAPP-3.0で使われていた古いSCF収束度の解釈を使う場合、1、使わなければ、0$^\ast$。 \\
+d &  aux\_eng\_type & DFTのエネルギーに加えて補助的なエネルギーを使う場合、そのタイプを指定する。NONE: なし、DFTD2: DFT-D2[2]、S. GrimmeのコードによるDFT-D3とDFT-D2[3,4]: DFTD3\_SGとDFTD2\_SG。デフォルトはNONE。DFT-D2は対応した交換相関汎関数と組み合わせて使用していない場合、無効になる。DFT-D3(S. Grimme)に対応していない交換相関汎関数を組み合わせた場合、エラーになる。DFT-D2は、zero dampingを、DFT-D3はBecke-Johnson dampingを使用する。 \\
+d & precond\_thr & 局所ポテンシャルの収束を加速する前処理機能[5]が有効になるSCF収束度を指定する。指定していないか負の場合この機能は無効となる。 1000以上を指定すると常に有効となる。この機能が有効である場合、elec\_kbt $>$ 0でなければならない。\\
+d & precond\_beta & 局所ポテンシャルの収束を加速する前処理機能が有効である場合に使われるxtrap\_betaの値を指定する。 \\
+d & cutoff\_precond & トーマス・フェルミ近似に基づいて局所ポテンシャルの収束を加速する前処理機能において用いられるハニング窓のカットオフを指定する。フェルミ面での状態密度はcutoff\_precond(3)からcutoff\_precond(4)まででなめらかにカットオフ、局所ポテンシャルの前処理はcutoff\_precond(1)からcutoff\_precond(2)まででなめらかにカットオフされる。
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+なお、単位胞を表す基本格子ベクトル$\mathbf{a}_i$の成分は、
+\begin{eqnarray*}
+ a_{i,x} &=& \texttt{ax} \times \texttt{aa(1,i)}\\
+ a_{i,y} &=& \texttt{ax} \times \texttt{aa(2,i)}\\
+ a_{i,z} &=& \texttt{ax} \times \texttt{aa(3,i)}
+\end{eqnarray*}
+で与えられる。
+
+また、有効な\verb+xc_type+は
+
+\begin{tabular}{cccc}
+\hline
+ xc\_type & commet & DFT-D2 & DFT-D3 (SG)\\
+\hline
+ PBE & & 有効 & 有効 \\
+ PBEsol & & & 有効 \\
+ PW91 & & & \\
+ CAPZ & Ceperley Alder Perdew Zunger & \\
+ LDAPW92 & PBEのLDA部分 & \\
+ HF & Hartree Fock & & 有効\\
+ PBE0 & & 有効 & 有効\\
+ B3LYP & テスト必要 & 有効 & 有効\\
+\hline
+\end{tabular}
+
+である。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+old name & new name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ax & lattice\_factor \\
+aa & lattice\_list &  aa(:,1),aa(:,2),aa(:,3) = lattice\_list(1:9) \\
+nspin & number\_spin \\
+ismode & spin\_mode \\
+qf & cutoff\_local\_potential \\
+qm & cutoff\_wave\_function \\
+qc & cutoff\_uspp\_q \\
+beta & xtrap\_beta \\
+qbtp(1) & cutoff\_btp\_a \\
+qbtp(2) & cutoff\_btp\_gc \\
+qbtp(3) & cutoff\_btp\_sigma \\
+nkd & number\_element \\
+nsi & number\_atom \\
+nw & number\_band \\
+znext & extra\_charge \\
+dspin & diff\_spin \\
+ekbt & elec\_kbt \\
+iopt(1) & number\_xtrap\_stage \\
+iopt(2) & initial\_wfn \\
+iopt(3) & initial\_lpt \\
+iopt(4) & store\_wfn \\
+iopt(5) & chain\_calc \\
+iopt(6) & precond\_thr, precond\_beta, cutoff\_precond \\
+eps & scf\_converge \\
+eepsa & scf\_converge\_energy \\
+niter0 & scf\_number\_iter\_1st \\
+niter1 & scf\_number\_iter \\
+itsb & davidson\_flag \\
+ndiag0 & davidson\_number\_diag\_1st \\
+ndiag1 & davidson\_number\_diag \\
+uptime & control\_uptime \\
+qbsf & cutoff\_bspl\_fit \\
+fwqcom & control\_q\_han\_win\_fac \\
+nbsf & control\_nbsf \\
+xctp & xc\_type \\
+rc & cutoff\_exch\_att\_rc & exchange計算に用いるattenuationのcutoff \\
+rd & cutoff\_exch\_att\_rd & exchange計算に用いるattenuationのcutoff \\
+thr\_hybrid & scf\_threshold\_hybrid & hybrid汎関数に切り替える際の収束度のしきい値 \\
+\end{longtable}
+
+である。
+
+参考
+
+[1]: M. Bernasconi et al., J. Phys. Chem. Solids \textbf{36} 501-505 (1995).
+
+[2]: S. Grimme, J. Comput. Chem. \textbf{27} (15) 1787-1799 (2006).
+
+[3]: S. Grimme, J. Antony, S. Ehrlich and H. Krieg, J. Chem. Phys, \textbf{132} 154104 (2010).
+
+[4]: S. Grimme, S. Ehrlich and L. Goerigk, J. Comput. Chem, \textbf{32} 1456-1465 (2011).
+
+[5]: Y. Yoshimoto and S. Tsuneyuki, Int. J. Quant. Chem., \textbf{91} 211-215 (2003).
+
+\pagebreak
+
+\section{symmetry data セクション}
+必須のセクションである。
+ここで指定する対称操作は物体に作用するもので、
+点群操作の後に並進操作を行うものである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# symmetry data
+ &symmetry
+ ...
+ /
+ ((rg(i,j,1),i=1,3),j=1,3), (pg(i,1),i=1,3)
+ ((rg(i,j,2),i=1,3),j=1,3), (pg(i,2),i=1,3)
+ ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+ただし、\verb+rg+ は対称操作の行列要素、\verb+pg+ は対称操作の並進要素である。
+namelist \verb+symmetry+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ symmetry_format,
+ number_sym_op,
+ has_inversion,
+ denom_trans
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+\verb+symmetry_format+にreciprocal（既定値）を指定すると
+\verb+rg+は逆空間の逆格子ベクトルに作用するものになる。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+  & symmetry\_format & 対称性の入力フォーマットを指示する、既定値'reciprocal'は逆格子ベクトルに対して対称性行列が作用することを指示する。 \\
+  & number\_sym\_op & 対称性行列の数\\
+d & has\_inversion & 対称性行列の中に反転対称性が含まれており、それを使った計算の高速化を友好にする場合に1を指定。そうでない場合には0を指定。デフォルトは0$^\ast$。\\
+a & denom\_trans & 対称操作を指定する際の並進操作のベクトルを指示する際に用いる、基本並進ベクトルの分割数。これを単位にして対称操作の並進ベクトルを整数値で指定する。デフォルト値は1。\\
+  & rg(1:3,1:3,*) & 対称操作の$3\times 3$行列部分。整数値をとる。symmetry\_format=reciprocalの場合には逆格子に作用する。\\
+  & pg(1:3,*) & 対称操作の並進部分。整数値をとり、基本並進ベクトルをdenom\_transで割ったベクトル単位。対称操作は物体に対して作用し、行列操作ののち並進操作を行う。\\
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+\verb+rg(:,:,*)+は対称操作の点群部分を表し、
+基本逆格子ベクトル$\mathbf{b}_i$を用いて、逆格子を整数$G^c_1,G^c_2,G^c_3$で
+\[
+ \mathbf{G} = \left(\mathbf{b}_1,\mathbf{b}_2,\mathbf{b}_3,\right)\left( \begin{array}{c}G^c_1\\G^c_2\\G^c_3\end{array} \right)
+\]
+と表すとき、\verb+rg(:,:,*)+は$\mathbf{G}^c$に、$S^c\mathbf{G}^c$と働く$3\times 3$の変換行列である。$S^c$の各成分は
+\[
+ S^c_{i,j} = \texttt{rg(i,j,*)}
+\]
+で与えられる。また\verb+rg(:,:,1)+は必ず単位行列でなければならない。
+
+また、\verb+pg(:,*)+は対称操作の並進部分を表すが、その並進ベクトル$\mathbf{p}$は
+\[
+ \mathbf{p} = \left(\mathbf{a}_1,\mathbf{a}_2,\mathbf{a}_2\right)\frac{1}{\texttt{nnp}}\left(\begin{array}{c}\texttt{pg(1,*)}\\\texttt{pg(2,*)}\\\texttt{pg(3,*)}\end{array}\right)
+\]
+で与えられる。
+
+逆格子の上での対称操作の行列部分$S^c$と実格子(実空間ではない)の上での対称操作
+の行列部分$T^c$の間には
+\[
+ T^c = \left[(S^c)^t\right]^{-1} = \left[(S^c)^{-1}\right]^t
+\]
+の関係がある。ところで群全体としてみると$\{S^c\}$と$\{(S^c)^{-1}\}$は同じメンバーで構成されている
+から$\{S^c\}$のメンバー全体は$\{T^c\}$の転置行列で得られることが分かる。つまり、
+実格子の対応関係を追跡することで$\{T^c\}$を計算し、これの転置行列を取れば$\{S^c\}$を計算できる。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccc}
+\hline
+old name & new name & comment \\
+\hline
+ -- & symmetry\_format & 既定値'reciprocal' \\
+ ng & number\_sym\_op \\
+ nsv & has\_inversion \\
+ nnp & denom\_trans \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{atom data セクション}
+必須のセクションである。
+最初の元素数分の行には、1番目から順に各元素に割り当てる擬ポテンシャルの
+価電荷\verb+zo+とコア電荷\verb+zn+を指定する。
+\verb+zo+、\verb+zn+にそれぞれ\verb+0+を指定するとどのような擬ポテンシャルにも
+対応する意味となる。
+これに引き続く原子の数だけの行ではそれぞれユニットセル中の原子位置を指定する。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# atom data
+ zo zn
+ ...
+ atom_kind, pos_a, pos_b, pos_c
+ ... 
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+ただし、\verb+atom_kind+ は原子の種類、\verb+pos_a+ などは原子の位置を
+セル座標で表したものである。
+つまり、原子位置$\mathbf{R}$は
+\[
+ \mathbf{R} = \left(\mathbf{a}_1,\mathbf{a}_2,\mathbf{a}_2\right)\left(\begin{array}{c}\texttt{pos\_a}\\\texttt{pos\_b}\\\texttt{pos\_c}\end{array}\right)
+\]
+で与える。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+  & zo & 元素の価電荷数。自然数ではない特殊な擬ポテンシャルがありえる。 0を与えると価電荷数のチェックは行われない。\\
+  & zn & 元素の全電荷数 = 原子番号。0を与えると全電荷数のチェックは行われない。\\
+  & atom\_kind & 元素の種類の番号。元素番号ではなく、プログラムに与える擬ポテンシャルの順番である。\\
+  & pos\_a, pos\_b, pos\_c & 原子位置を格子座標で与えたもの。\\
+\end{longtable}
+
+である。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccc}
+\hline
+old name & new name & comment \\
+\hline
+ kd & atom\_kind \\
+ asi(1) & pos\_a \\
+ asi(2) & pos\_b \\
+ asi(3) & pos\_c \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{k-points data セクション}
+必須のセクションである。
+k点サンプルについて指示する。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# k-points data
+ &smpl_kpt
+ ...
+ /
+  mmm(1,1),mmm(2,1),mmm(3,1)
+  mmm(1,2),mmm(2,2),mmm(3,2)
+  ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+namelist \verb+smpl_kpt+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ dos_mode,
+ dos_band_lower,
+ dos_band_upper,
+ dos_mesh,
+ bz_mesh,
+ bz_number_tile,
+ cutoff_dos_cos,
+ rmesh_number_shell,
+ rmesh_range
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。また、\verb+mmm+はBZ内のk点のタイルを指示する。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+  & dos\_mode & k点サンプルに用いる手法。COSならcos展開、METHFESSEL\_PAXTONならMethfessel Paxton法、FERMIならFermi関数を用いる。Methfessel Paxton法とFermi関数を用いている場合、\verb+elec_kbt > 0+でなければならない。\\
+  & dos\_band\_lower & dos\_band\_lower未満のバンドはすべて占有されていると解釈される。設定しなければ1。\\
+  & dos\_band\_upper & dos\_band\_lowerからdos\_band\_upperまでのバンドが部分占有される可能性があると解釈され、k点サンプル手法が適用される。設定しなければnumber\_band。\\
+  & dos\_mesh(1:3) & k点サンプル手法が用いるBZの分割数。必ずしも計算上のk点のサンプル数とは等しくない。bz\_number\_tile = 1の場合のみ指定しなければ自動的に設定される。\\
+  & bz\_mesh & 計算上のk点のサンプル数を決定するk点のタイルを表すため、BZはGamma点を含むbz\_mesh$\times$bz\_mesh$\times$bz\_meshのgridに分割される。\\
+  & bz\_number\_tile & 計算上のサンプルk点を決めるタイルの種類数 \\
+  & cutoff\_dos\_cos & cos展開を行う際、cutoff\_dos\_cosまでの長さの実格子を用いて展開する。bz\_number\_tile = 1の場合のみ指定しなければ自動的に設定される。\\
+  & rmesh\_number\_shell & cos展開を行う際、実格子点を手動で設定するときのshellの数。\verb+bz_number_tile > 1+の時のみ有効。 \\
+  & rmesh\_range(1:3) & cos展開を行う際、実格子を手動で設定するときの格子点の範囲。\verb+bz_number_tile > 1+の時のみ有効。\\
+  & mmm(1:3,1,*) & 計算上のサンプルk点を決めるタイルの起点。(bz\_mesh$^3$のgridにおいて)\\
+  & mmm(1:3,2,*) & 計算上のサンプルk点を決めるタイルの間隔。(bz\_mesh$^3$のgridにおいて)\\
+\end{longtable}
+
+となっている。
+
+サンプル$k$点の決定は以下の順で行われる。
+\begin{enumerate}
+ \item 第一ブリュアンゾーンは各基本逆格子ベクトル方向に\verb+bz_mesh+個の区間にそれぞれ格子分割される。ただしできた格子点に$\Gamma$点は含まれる。
+ \item これら格子点をサンプル格子と呼ぶことにする。この格子点の中からサンプル$k$点が選出される。
+ \item タイルの数だけ格子点のマークづけを行う。
+       \begin{enumerate}
+	\item タイルの番号を\verb+k+とする。
+	\item 拡張ゾーンの中で、サンプル格子を考える。
+	\item 各基本逆格子の方向について、拡張ゾーンでのサンプル格子点の上で\verb+-mmm(1:3,1,k)+から始めて\verb+mmm(1:3,2,k)+飛びに\verb+mmm(1:3,1,k)+以下までの格子点にマークをつけていく。
+	\item マーク自体は第一ブリュアンゾーンに還元してつける。
+       \end{enumerate}
+ \item マークづけされたサンプル格子点を対称操作で移動させて、可能な移動先すべてにもマークをつける。やはり第一ブリュアンゾーンに還元して考える。
+ \item マークのついたサンプル格子点のうち対称操作について既約なものを選出する。
+ \item 選出したk点の位置は等価なもので原点に一番近いものを記録する。（Wigner-Seitzセル）
+       したがって平行６面体の第一ブリュアンゾーンからはみ出すものがある。
+\end{enumerate}
+
+対称操作とタイルのあり方によっては、単純な格子模様をサンプル$k$点がとらないことに
+注意すること。また、個々のタイルの拡張ゾーンでの大きさは有限であることにも注意すること。
+このため、\verb+mmm(1:3,2,*)+が\verb+bz_mesh+を割り切らない場合、不可思議なメッシュが生成される
+可能性がある。
+
+$\cos$展開を使っている場合、以下のようにsmearingが行われる。
+\begin{enumerate}
+\item バンドエネルギー$e_n(\mathbf{k})$は$\mathbf{k}$について
+$\cos$関数で展開される。展開係数の候補は実格子上で\verb+cutoff_dos_cos+まで探索される。
+\item 実格子の範囲は、\verb+bz_number_tile > 1+の時は、\verb+rmesh_number_shell+または\verb+rmesh_range+で指定しなければならない。
+
+\verb+rmesh_range+で指定する場合、$|l_1| < $\verb+rmesh_range(1)+, $|l_2| < $\verb+rmesh_range(2)+, $|l_3| < $ \verb+rmesh_range(3)+を満たす
+格子点$(l_1,l_2,l_3)$を含むshellが採択される。
+
+\verb+bz_number_tile = 1+の時は指定しなくてよく、実格子は自動的に候補の中から選出される。
+\item 任意の$\mathbf{k}$の位置でのバンドエネルギーが計算できるようになる
+\item 第一ブリュアンゾーンを\verb+dos_mesh(1:3)+で分割した格子点と
+      \verb+2*dos_mesh(1:3)+で分割した格子点の両方で、補間を用いて
+      バンドエネルギーが計算される
+\item 二つのメッシュのそれぞれでバンドエネルギーを四面体法でつないでフェルミ面積分が行われる。
+\item Romberg法でフェルミ面積分の収束が加速される
+\end{enumerate}
+フェルミ面付近のバンドが単純な振る舞いをする場合、$\cos$展開で早い収束が得られる。Cuは
+そのような例である。逆にそうでない場合、計算が不安定になることがある。
+$\cos$展開法の計算コストは現状のアルゴリズムの場合、$k$点メッシュの数と
+$R$点メッシュの数の両方に比例するため、$k$点の濃度の濃い系の場合、かなり大きい。
+そのため、計算の対象となるバンドを絞り込む機能がついている。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccp{8cm}}
+\hline
+old name & new name & comment \\
+\hline
+ -- & dos\_mode & サンプル手法(smearing); nd[xyz]$>$0ならCOS, nd[xyz]=0ならMETHFESSEL\_PAXTON, nd[xyz]$<$0ならFERMI\\
+ nb1 & dos\_band\_lower \\ 
+ nb2 & dos\_band\_upper \\
+ ndx,ndy,ndz & dos\_mesh(1:3) \\
+ nk & bz\_mesh \\
+ -- & bz\_number\_tile & サンプルに使うタイルの数\\
+ rf & cutoff\_dos\_cos \\
+ nkrold & rmesh\_number\_shell & \\
+ ll1,ll2,ll3 & rmesh\_range(1:3) & \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{initial charge セクション}
+初期電荷分布の詳細を指定するオプションのセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# initial charge
+ &initial_charge
+ mode = 'flip_atomic_charge'
+ /
+ flipchr(1)
+ flipchr(2)
+ ...
+ flipchr(number_atom)
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+または
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# initial charge
+ &initial_charge
+ mode = 'direct_atomic_charge'
+ /
+ udirchr(1,1) udirchr(2,1) udirchr(3,1)
+ udirchr(1,2) udirchr(2,2) udirchr(3,2)
+ udirchr(1,3) udirchr(2,3) udirchr(3,3)
+ ...
+ flipchr(number_atom)
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+
+namelist \verb+initial_charge+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ mode
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+  & mode & 初期電荷分布の詳細を指定するモードを書く。\verb+flip_atomic_charge+
+  と\verb+direct_atomic_charge+が有効である。 \\
+  & flipchr & 各原子ごとに設定する初期スピン電荷密度の扱い。
+番号は入力での原子の並び順である。
+0: 原子からの初期スピン電荷密度をそのまま使う、
+1: 原子からの初期スピン電荷密度を反転してから使う。 \\
+  & udirchr(1:3) & 各原子ごとに設定する初期スピンの偏極方向をCartesian座標で指定する。
+すべて$0$を指定すると偏極しない。その他の場合、向きだけが意味を持つように規格化されて扱われる。
+\end{longtable}
+となっている。初期スピン電荷の極性を反転しながら定義することで
+反強磁性体の初期スピン電荷密度分布を作成できる。スピン偏極した原子電荷密度を
+与えていない場合、このセクションは実質的に意味を持たないので注意すること。
+
+\pagebreak
+
+\section{ struct\_opt data セクション}
+構造最適化を行うcgmrptにおいて必須のセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# struct_opt data
+ &struct_opt
+ ...
+ /
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+namelist \verb+struct_opt+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ converge_energy,
+ converge_force,
+ converge_stress,
+ search_1d_fratio,
+ displacement_max,
+ cell_deform_displ_max,
+ number_cycle,
+ refresh_cycle,
+ search_1d_max_step,
+ extern_pressure,
+ stress_scale,
+ cell_deform,
+ mode
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ a & converge\_energy & 構造最適化の終了条件の一つ。エネルギー変化の収束。\\
+ a & converge\_force & 構造最適化の終了条件の一つ。力の残差の収束。\\
+ a & converge\_stress & 構造最適化の終了条件の一つ。ストレスと外部圧力の釣り合いの収束。\\
+ a & search\_1d\_fratio & 1次元構造最適化の終了条件。力の減少比。対称性などの制約条件によって元々1次元で構造最適化をしている場合には、これを小さくし、1次元構造最適化をきちんとさせると効率よく収束する。\\
+ a & displacement\_max & 原子を動かす最大距離。\\
+ a & cell\_deform\_displ\_max & セル変形をその$\exp$で表す行列の各要素の変化量の最大値。\\
+ a & number\_cycle & 1次元構造最適化の繰り返し数。構造最適化を行わず電子状態計算のみ行う場合には0を指定する。デフォルトでは構造最適化が行われる。\\
+ a & refresh\_cycle & 共役勾配法の情報を捨てる周期。\\
+ a & search\_1d\_max\_step & 1次元構造最適化を行う最大ステップ数。search\_1d\_fratioを小さくしている場合にはそれに見合うだけ大きくすること。\\
+ d & extern\_pressure & 外部圧力。デフォルトでは0$^\ast$。\\
+ d & stress\_scale(6) & 構造最適化時にストレスに対してかける係数。すべて0$^\ast$ならセルは固定される。すべて同じ係数ならセルは最適化される。成分の順ははカーテシアン座標で表して$xx,yy,zz,yz,zx,xy$である。\\
+ d & cell\_deform(6) & セル構造最適化時に最初のセルを\verb+lattice_list+から変形させるパラメータ。デフォルトではすべて0$^\ast$。\verb+lattice_list+で決まる平面波基底とずらして初期のセル構造を取りたい時に使う。\\
+ d & mode & 構造最適化のモードを選択する。\verb+NONE+: 通常の最適化$^\ast$、\verb+HYPER_PLANE+: hyper plane constraint法、\verb+FORCE_INVERSION+: force inversion法。
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+一次元構造最適化の終了は、力の大きさが構造最適化開始時のそれの\verb+search_1d_fratio+倍
+よりも小さくなることで判断される。
+通常、構造最適化の終了条件としては\verb+converge_force+を使い、
+\verb+converge_energy+は使わない。
+
+\verb+converge_stress+は、セルのストレスと外部圧力の釣り合いの収束を指定するもので、
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu} - p_{ext}V\right) \textrm{;\quad for\quad} \nu = xx,yy,zz
+\]
+\[
+ \frac{1}{N_{atom}}\left(\frac{dE}{d\epsilon_\nu}\right) \textrm{;\quad for\quad} \nu = yz,zx,xy
+\]
+の許容最大を指定する。
+
+収束の判定において\verb+converge_force+と\verb+converge_stress+はANDで評価される。
+一方で\verb+converge_energy+はこれらとORで評価される。
+
+stress\_scaleの値は、stress\_scaleの6成分を系のストレスの6成分にそれぞれかけて
+原子数$n$で割ったものが、
+原子にかかる力と同じ次元として構造最適化の$3n+6$次元超空間での力のベクトル
+作ることになるつもりで設定すること。
+
+セル構造最適化を行う際の初期の基本格子ベクトルは、対称行列$c$を\verb+cell_deform+の６成分に
+$c_{11}$, $c_{22}$, $c_{33}$, $c_{23}$, $c_{31}$, $c_{12}$を対応させて定義すると、
+\[
+  \exp(c) \mathbf{a}_1, \exp(c) \mathbf{a}_2, \exp(c) \mathbf{a}_3
+\]
+の三つとなる。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccc}
+\hline
+old name & new name & comment \\
+\hline
+ eepsa & converge\_energy & scf\_converge\_energyと共通になっていた\\
+ eeps  & converge\_force \\
+ decr & search\_1d\_fratio \\
+ okatom & displacement\_max & プログラム上ではokatom(1)に対応。\\
+ ncycl & number\_cycle \\
+ nrfr & refresh\_cycle \\
+ most & search\_1d\_max\_step \\
+ syspext & extern\_pressure \\
+ stscl & stress\_scale \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{str\_opt\_constr data セクション}
+構造最適化を行うcgmrptにおいて必須のセクションである。
+構造最適化を行う際に用いる制約条件を指定する。
+制約条件には、常に働く各原子の力に作用させる逆質量テンソルと、hyper plane constraint法
+とforce inversion法の時に用いられる超平面の法線方向との二つがある。
+
+このセクションのフォーマットは以下のとおりであるが、
+各原子の力に作用させる逆質量テンソルの指定においては、
+1番のテンソルは単位行列を既定値とし、テンソルの数はこの1番を
+含めて数える。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# srt_opt_constr data
+ nmkd
+ tim(1,1,2),tim(2,1,2),tim(3,1,2)
+ tim(1,2,2),tim(2,2,2),tim(3,2,2)
+ tim(1,3,2),tim(2,3,2),tim(3,3,2)
+ ...
+ nset
+ imkd nmsi
+ tatm(1),...,tatm(nmsi)
+ ...
+
+ vnormal(1,1),vnormal(3,1),vnormal(3,1)
+ vnormal(1,2),vnormal(3,2),vnormal(3,2)
+ ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+各原子の逆質量テンソルは一旦1番の単位行列で初期化される。
+ここから始めて、各原子の逆質量テンソルは、あるテンソルimkdをnmsi個の原子に適用することを
+順に繰り返すことで設定する。ここでtatm(1:nmsi)は適用される原子のリストである。
+nsetはこの適用の繰り返し回数である。1番のテンソルは単位行列で固定されるので
+他に必要ない場合にはtimはすべて省略される。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+   & nmkd & 原子の逆質量テンソルの数。1番は単位行列で固定されているが、これも含めて数える。\\
+   & tim(1:3,1:3,*) & 原子の逆質量テンソル。2番以降を指定する関係で、nmkd = 1の場合、timの指定はない。\\
+   & nset & 逆質量テンソルを適用するセットの数。デフォルトですべての原子には単位行列がセットされている。\\
+   & imkd & セットするテンソルの種類。\\
+   & nmsi & imkdが適用される原子の個数。\\
+   & tatm(1:nmsi) & imkdが適用される原子の番号。 \\
+   & vnormal(1:3,*) & hyper plane constraint法とforce inversion法の時に用いられる超平面の法線方向。セル座標で入力する。またnumber\_atom行入力する。通常の構造最適化では入力しなくてよい。\\
+\end{longtable}
+
+である。imkdからtatmまでの並びはnset個繰り返される。
+
+この逆質量テンソルは、原子に働く力$\mathbf{f}$を基本格子ベクトル単位で表示したもの、
+\[
+ \mathbf{f}^d := \left(\mathbf{a}_1,\mathbf{a}_2,\mathbf{a}_3\right)^{-1} \mathbf{f} = -A^{-1} \frac{dE}{d\mathbf{r}}
+\]
+から変換した力$\mathbf{F}^d$を $F^d_i = \sum_j \texttt{tim(i,j,*)} F^d_j$で与える。
+
+また、$\mathbf{v}^{n,d}_i = \texttt{vnormal(*,i)}$とし、$\mathbf{v}^n_i = A \mathbf{v}^{n,d}_i$としたとき、hyper planne constraint法では、力場$\mathbf{f}_i$は、
+\[
+ \sum_i \mathbf{f}_i\cdot\mathbf{v}^n_i = 0
+\]
+を満たすように、$\mathbf{v}^n_i$に対してデカルト座標で自然な内積について
+平行な成分が除去されてから構造最適化に使われる。
+
+同様にforce inversion法では、力場$\mathbf{f}_i$は、
+\[
+ \sum_i \mathbf{f}_i\cdot\mathbf{v}^n_i
+\]
+の符号が反転するように、
+$\mathbf{v}^n_i$に対して平行な成分が反転されてから構造最適化に使われる。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccc}
+\hline
+old name & new name & comment \\
+\hline
+ tim & tim & 2番目から指定\\
+ nmkd & nmkd &  \\
+\hline
+\end{tabular}
+
+となっている。
+
+\pagebreak
+
+\section{trace band data セクション}
+k点を線分で追跡するプログラム
+vbpefとpefcosにおいて必須のセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# trace band data
+ &trace_band
+ ...
+ /
+ nkpt(1) ... nkpt(nbk+1)
+ ak(1,1) ... ak(1,nbk+1)
+ ak(2,1) ... ak(2,nbk+1)
+ ak(3,1) ... ak(3,nbk+1)
+ nkfi(1) ... nkfi(nbk)
+ rzero(1:3,1),rmin(1),rmax(1),ndiv(1)
+ ...
+ または
+ iaxis(1),rmin(1),rmax(1),ndiv(1)
+ ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+ここで、nbkは線分の個数、nkptは線分の両端のk点の名前、akはk点の位置を逆格子を単位と
+して与えたもの、nkfiは線分の分割数である。
+
+namelist \verb+trace_band+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ distrib_mode,
+ output_charge,
+ output_wave_function,
+ davidson_flag,
+ davidson_number_diag,
+ diag_converge,
+ distrib_band_lower,
+ distrib_band_upper,
+ distrib_number_sphere,
+ distrib_number_plate,
+ number_band,
+ number_band_traced,
+ number_trace_block
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。セクションで「または」となっている部分は
+\verb+distrib_mode+=noneなら無し、\verb+distrib_mode+=plateならiaxisで始まる
+もの、\verb+distrib_mode+=sphereならrzeroで始まるもの、を指定する。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ d & distrib\_mode & 波動関数の状態を調べるモード。none（なし$^\ast$）、plate（軸平行の板での積分値）、sphere（ある位置を中心とした球積分）の三種類。\\
+ d & output\_charge & 各k点の軌道電荷を出力するなら1。しないなら0$^\ast$。\\
+ d & output\_wave\_function & 各k点の波動関数を出力するなら1。しないなら0$^\ast$。\\
+ a & davidson\_flag & vbpefを実行する際に用いるDavidson法へのフラグ。\\
+ a & davidson\_number\_diag & vbpefを実行する際に用いるDavidson法の繰り返し数。\\
+ a & diag\_converge & vbpefを実行する際に用いるDavidson法の固有値収束判定条件。\\
+ a & distrib\_band\_lower & 波動関数の状態を調べる際のバンドの下限。デフォルトでは1。\\
+ a & distrib\_band\_upper & 波動関数の状態を調べる際のバンドの上限。デフォルトではnumber\_band。\\
+ & distrib\_number\_sphere & distrib\_mode = sphereの時に指定する。球の数。\\
+ & distrib\_number\_plate & distrib\_mode = plateの時に指定する。板の方向の数。\\
+ a & number\_band & 対角化計算を行うバンドの数。デフォルトはmain dataセクションで指定した値。k点の追跡では非占有状態を多く計算したい場合がある。\\
+ a & number\_band\_traced & k点の追跡を行うバンドの数。number\_band以下であること。実際に調べたいバンドの数よりも多めに対角化を行う方が計算が速いことがあるためこのパラメータが存在する。デフォルトではnumber\_band。\\
+ & number\_trace\_block & k点の追跡を行う線分の数。\\
+ & nkpt & k点の追跡を行う線分の両端のk点の名前。6文字以内。 \\
+ & ak(1:3,*) & k点の追跡を行う線分の両端のk点の座標を基本逆格子ベクトル単位で表したもの。 \\
+ & nkfi & k点の追跡を行う各線分の分割数。 \\
+ & rzero(1:3) & 波動関数の状態を球積分で調べる際の球の中心の座標。\\
+ & iaxis & 波動関数の状態を軸平行の積分で調べる際の軸の番号。\\
+ & rmin & 波動関数の状態を調べる際に行う積分の下限。\\
+ & rmax & 波動関数の状態を調べる際に行う積分の上限。\\
+ & ndiv & 波動関数の状態を調べる際に行う積分の下限か上限までの分割数。\\
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+波動関数を調べるモードがplateの時、指定した座標軸（複数指定も可）に沿って、原点から設定
+されたメッシュ点までの擬波動関数のノルム積分が調べられる。
+
+座標軸と積分領域は、\verb+iaxis, rmin, rmax, ndiv+で与える。
+これらは結晶座標（基本格子ベクトルの単位）で指定し、\verb+distrib_number_plate+だけ
+繰り返す。
+設定されるメッシュ点$R_i$は、
+%
+  \[R_i = {\tt rmin} +({\tt rmax}-{\tt rmin}) \times
+         {i \over {\tt ndiv}} \quad ; \quad i= 0 \sim {\tt ndiv} \]
+%
+である。
+
+波動関数を調べるモードがsphereの時、指定した座標点（複数指定も可）を中心とする適当な半径
+の球内における擬波動関数のノルム積分が調べられる。
+
+座標点と積分領域は\verb+rzero(1:3), rmin, rmax, ndiv+で与える。
+座標点は結晶座標（基本格子ベクトルの単位）で指定する。一方、動径
+変数\verb+rmin, rmax+は原子単位で指定する。これらは\verb+distrib_number_sphere+だけ
+繰り返す。
+
+設定される動径方向のメッシュ点$R_i$は、
+%
+  \[R_i = {\tt rmin} +({\tt rmax}-{\tt rmin}) \times
+         {i \over {\tt ndiv}} \quad ; \quad i= 0 \sim {\tt ndiv} \]
+%
+  である。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccp{8cm}}
+\hline
+old name & new name & comment \\
+\hline
+ ifbunp & distrib\_mode & ifbunp=0ならnone、ifbunp=1ならplate、ifbunp=2ならsphere \\
+ ifrho & output\_charge & ifrho=1なら1\\
+ ifrho & output\_wave\_function & ifrho=2な1\\
+ itsb & davidson\_flag \\
+ ndiag & davidson\_number\_diag \\
+ eps & diag\_converge \\
+ nbba1 & distrib\_band\_lower \\
+ nbba2 & distrib\_band\_upper \\
+ nsph & distrib\_number\_sphere & distrib\_mode = sphereの時\\
+ nsph & distrib\_number\_plate & distrib\_mode = plateの時\\
+ nw & number\_band \\
+ nb2 & number\_band\_traced \\
+ nbk & number\_trace\_block \\
+ rzero & rzero \\
+ iaxis & iaxis \\
+ rmin  & rmin \\
+ rmax  & rmax \\
+ ndiv  & ndiv \\
+\hline
+\end{tabular}
+
+となっている。
+
+\pagebreak
+
+\section{inspect wfn data セクション}
+波動関数を評価するプログラムwfn2chgにおいて必須のセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# inspect wfn data
+ &inspect_wfn
+ ...
+ /
+ rzero(1:3,1),rmin(1),rmax(1),ndiv(1)
+ ...
+ または
+ iaxis(1),rmin(1),rmax(1),ndiv(1)
+ ...
+ または
+ target_asi(1:3)
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+namelist \verb+inspect_wfn+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ distrib_mode,
+ output_charge,
+ distrib_band_lower,
+ distrib_band_upper,
+ distrib_number_sphere,
+ distrib_number_plate,
+ pdos_target_atom
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。セクションで「または」となっている部分は
+\begin{enumerate}
+ \item \verb+distrib_mode+=noneなら無し、
+ \item \verb+distrib_mode+=pdosかつ\verb+pdos_target_atom = 0+なら\verb+target_asi+を
+ \item \verb+distrib_mode+=pdosかつ\verb+pdos_target_atom > 0+なら無し
+ \item \verb+distrib_mode+=plateならiaxisで始まるもの、
+ \item \verb+distrib_mode+=sphereならrzeroで始まるもの、を指定する。
+\end{enumerate}
+を指定する。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ d & distrib\_mode & 波動関数の状態を調べるモード。none（なし$^\ast$）、plate（軸平行の板での積分値）、sphere（ある位置を中心とした球積分）、pdos(projected DOS)、wannier(Wannier関数)の5種類。\\
+ d & output\_charge & 各k点の軌道電荷を出力するなら1。しないなら0$^\ast$。\\
+ a & distrib\_band\_lower & 波動関数の状態を調べる際のバンドの下限。\\
+ a & distrib\_band\_upper & 波動関数の状態を調べる際のバンドの上限。\\
+ & distrib\_number\_sphere & distrib\_mode = sphereの時に指定する。球の数。\\
+ & distrib\_number\_plate & distrib\_mode = plateの時に指定する。板の方向の数。\\
+ & pdos\_target\_atom & distrib\_mode = pdosのときに指定するPDOSを計算する原子の番号。ただし番号が0の時には、target\_asiでセル座標を直接指定する。\\
+ & rzero(1:3) & 波動関数の状態を球積分で調べる際の球の中心の座標。\\
+ & iaxis & 波動関数の状態を軸平行の積分で調べる際の軸の番号。\\
+ & rmin & 波動関数の状態を調べる際に行う積分の下限。\\
+ & rmax & 波動関数の状態を調べる際に行う積分の上限。\\
+ & ndiv & 波動関数の状態を調べる際に行う積分の下限か上限までの分割数。\\
+ & target\_asi(1:3) & projected DOSを原子以外の位置で調べる時の座標(基本格子ベクトル単位)。\\
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+波動関数を調べるモードがplateの時、指定した座標軸（複数指定も可）に沿って、原点から設定
+されたメッシュ点までの擬波動関数のノルム積分をk点でさらに積分したものが計算される。
+
+座標軸と積分領域は、\verb+iaxis, rmin, rmax, ndiv+で与える。
+これらは結晶座標（基本格子ベクトルの単位）で指定し、\verb+distrib_number_plate+だけ
+繰り返す。
+設定されるメッシュ点$R_i$は、
+%
+  \[R_i = {\tt rmin} +({\tt rmax}-{\tt rmin}) \times
+         {i \over {\tt ndiv}} \quad ; \quad i= 0 \sim {\tt ndiv} \]
+%
+である。
+
+波動関数を調べるモードがsphereの時、指定した座標点（複数指定も可）を中心とする適当な半径
+の球内における擬波動関数のノルム積分をk点でさらに積分したものが計算される。
+
+座標点と積分領域は\verb+rzero(1:3), rmin, rmax, ndiv+で与える。
+座標点は結晶座標（基本格子ベクトルの単位）で指定する。一方、動径
+変数\verb+rmin, rmax+は原子単位で指定する。これらは\verb+distrib_number_sphere+だけ
+繰り返す。
+
+設定される動径方向のメッシュ点$R_i$は、
+%
+  \[R_i = {\tt rmin} +({\tt rmax}-{\tt rmin}) \times
+         {i \over {\tt ndiv}} \quad ; \quad i= 0 \sim {\tt ndiv} \]
+%
+  である。
+
+波動関数を調べるモードがpdosの時、\verb+pdos_target_atom+で指定した番号の
+原子について論理機番\verb+VBCHRGWAV+から読み込んだ動径波動関数に射影した
+状態密度が計算される。
+
+波動関数を調べるモードがwannierの時、論理機番\verb+NFRECIPWAN+ から読み込んだ
+Wannier関数への状態密度が計算される。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccp{8cm}}
+\hline
+old name & new name & comment \\
+\hline
+ ifbunp & distrib\_mode & ifbunp=0ならnone、ifbunp=1ならplate、ifbunp=2ならsphere、ifbunp=3ならpdos \\
+ ifrho & output\_charge & ifrho=1なら1\\
+ nbba1 & distrib\_band\_lower \\
+ nbba2 & distrib\_band\_upper \\
+ nsph & distrib\_number\_sphere & distrib\_mode = sphereの時\\
+ nsph & distrib\_number\_plate & distrib\_mode = plateの時\\
+ itwav & pdos\_target\_atom \\
+ rzero & rzero \\
+ iaxis & iaxis \\
+ rmin  & rmin \\
+ rmax  & rmax \\
+ ndiv  & ndiv \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{stm data セクション}
+STMをシミュレートするプログラムvbstmにおいて必須のセクションである。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# stm data
+ &stminput
+ ...
+ /
+ vs(1)
+ ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+配列vsにはバイアス電圧を与える。
+
+namelist \verb+stminput+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ number_bias,
+ stm_fermi_energy
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。
+
+名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+  & number\_bias & バイアス電圧の数。\\
+  & stm\_fermi\_energy & Fermiエネルギーの位置。\\
+  & vs(1:number\_bias) & バイアス電圧。[eV]\\
+\end{longtable}
+
+である。
+
+旧形式の入力ファイルとの名前の新旧対応は、
+
+\begin{tabular}{ccp{8cm}}
+\hline
+old name & new name & comment \\
+\hline
+ nbias & number\_bias \\
+ eferm & stm\_fermi\_energy \\
+ vs & vs \\
+\hline
+\end{tabular}
+
+である。
+
+\pagebreak
+
+\section{md data セクション}
+分子動力学のためのセクションである。mdrptに必須である。
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# md data
+ &mol_dyn
+ ...
+ /
+ mass(1) ... mass(nkd)
+ cavl(1,1), cavl(2,1), cavl(3,1)
+ ...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+ここで、massは各原子の質量を原子質量単位で与えたもの、
+cavlは各原子の初期速度をカーテシアン座標と原子単位系で与えたものである。
+
+namelist \verb+mol_dyn+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+ mdmode,
+ delta_time,
+ init_md_step,
+ end_md_step,
+ mode_xtrap_rho_wfn,
+ message_cycle,
+ system_volume,
+ system_kbt,
+ system_pressure,
+ stern_omega_zeta,
+ stern_omega_eta,
+ stern_zeta,
+ stern_eta,
+ stern_sigma,
+ brdsn_tauinv,
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。名前の内容は、
+
+\begin{longtable}{cp{4cm}p{9cm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+a & mdmode & 分子動力学のモード。NVE (NVE）、NVT\_BRDSN（Berendsen thermostatによるNVT）、NPT\_ST（Sternのアルゴリズム[1]によるNPT）。デフォルトはNVE。\\
+  & delta\_time & 分子動力学の時間ステップ(a.u.)\\
+a & init\_md\_step & 分子動力学の開始ステップ番号。$-1$の場合、系の温度からランダムに初期速度を生成する。デフォルトは$0$。\\
+a & end\_md\_step & 分子動力学の終了ステップ番号。デフォルトはintegerの最大。\\
+a & mode\_xtrap\_rho\_wfn & 波動関数と電荷分布の補外方法の指定。0なら補外なし。1なら[2,3]によって補外。2なら[2,3]によって補外する際、原子の電荷分布は原子に追随するとして補外。デフォルトは2。\\
+a & message\_cycle & ログ出力間隔。デフォルトは毎回。\\
+d & system\_volume & 系の初期体積。セルは初期体積になるよう一様等方に拡大縮小される。指定しなければ、メインで指定した体積になる$^\ast$。\\
+ & system\_kbt & 系の設定温度。$k_B T$をエネルギー単位で指定。\\
+a & system\_pressure & 系の設定圧力。設定しなければ0。\\
+ & stern\_omega\_zeta & thermostatのパラメタ。[1]\\
+ & stern\_omega\_eta & barostatのパラメタ[1]。0にすると、体積は固定され、NVTになる。\\
+ & stern\_zeta & thermostatの初期値\\
+ & stern\_eta & barostatの初期値\\
+ & stern\_sigma & 積分法の保存量のための初期値\\
+ & brdsn\_tauinv & Berendsen thermostat の時定数の逆数$\tau^{-1}$。0にするとNVEになる。\\
+ & mass & 各原子種の質量（a.m.u単位）。\\
+ & cavl(1:3,*) & 各原子の初期速度（カーテシアン座標、原子単位系）\\
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+Berendsen thermostat[4]においては、毎ステップ速度が
+\[
+ \left( 1 + \Delta t \tau^{-1}\left(\frac{\sigma}{E_{kin}}- 1\right) \right)^{1/2}
+\]
+\[
+ \sigma = \frac{3N_{\textrm{atom}}-3}{2}k_BT
+\]
+でスケールされる。
+
+名前の新旧対応は、
+
+\begin{longtable}{cp{4cm}p{8cm}}
+\hline
+old name & new name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+ deltm & delta\_time \\
+ imdstp & init\_md\_step \\
+ emdstp & end\_md\_step \\
+ imtrw & mode\_xtrap\_rho\_wfn \\
+ msgcycl & message\_cycle \\
+ sysvol & system\_volume \\
+ syskbt & system\_kbt \\
+ syspext & system\_pressure \\
+ omzeta & stern\_omega\_zeta & thermostatのパラメタ\\
+ ometa & stern\_omega\_eta & barostatのパラメタ\\
+ zeta & stern\_zeta & thermostat\\
+ eta & stern\_eta & barostat\\
+ sigma & stern\_sigma \\
+\end{longtable}
+
+である。
+
+参考
+
+[1] H.A. Stern, J. Compt. Chem, Vol. 25, No. 5, 749-761 (2004)
+
+[2] T.A. Arias, M.C. Payne, J.D. Joannopoulos, Phys. Rev. B 45 (1992) 1538
+
+[3] Dario Alfe, Comp. Phys. Comm., 118 (1999) 31
+
+[4] DL\_POLY\_4 User Manual, I.T. Todorov and W. Smith
+
+\pagebreak
+
+\section{md aux data セクション}
+拡張された分子動力学のためのセクションである。分子動力学のコードを拡張する場合
+その入力データをここに置く。拡張するコードによって入力は異なる。
+
+\section{ESM法の入力ファイル}
+
+\verb+esmprm.dat+の書式は以下の通りである
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+normal
+bc_type
+z1
+iffix
+add_elec
+fix_ef
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+ここで各変数の内容は
+
+\begin{longtable}{p{4cm}p{9cm}}
+\hline
+name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+normal & ESMを適用する軸。X(1番目)またはZ(3番目)を指定可能。\\
+bc\_type & 境界条件の種類。1,2,3,4のいずれかを指定。\\
+z1 & ESM電極の位置$z1$。\\
+iffix & 1: 電子数一定モード。現状では1でなければならない。\\
+add\_elec & 系に追加する電子の数(電子数一定モード)。 \\
+fix\_ef & 現状では無効。0.0を指定。\\
+e0 & bc\_type = 4で有効。$\pm z1$に位置する導体間の電場勾配。\\
+\end{longtable}
+
+である。ESMを適用する軸は他の軸に直交していなければならない。
+
+次にESM法における境界条件は以下の通りである。
+まず\verb+normal+で指示されるセルの垂直軸に
+ついて、その長さを$L$、垂直軸にそった位置を$z$としたとき、
+\begin{itemize}
+\item $z<|L/2|$までは波動関数$\ne 0$で電場も$\ne 0$
+\item $|L/2|<z<z1$までは波動関数$=0$だが電場は$\ne 0$
+\item $z>z1$では波動関数と電場の両方が$=0$(電極が金属だとして)
+\end{itemize}
+となっている。そして\verb+bc_type+ の値に応じて
+\begin{enumerate}
+\item 両サイド真空 vacuum $|$ cell $|$ vacuum （ε = 1）
+\item 両サイド導体 metal $|$ cell $|$ metal   （ε = 無限）
+\item 真空と導体　vacuum $|$ cell $|$ metal
+\item 両サイド導体（ε = 1）かつ両サイドにポテンシャル差が付けられる。平行平板キャパシタ。
+\end{enumerate}
+の4種類を選択できる。
+
+\section{wannier dataセクション}
+ワニエ関数のためのセクションである。wannierに必須である。
+
+\verb+wannier_ini_basis_mode+が1(デフォルト)の場合、
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ ...
+ /
+ lgau(1), mgau(1), alpg(1), taug(1,1), taug(2,1), taug(3,1), cgau(1)
+ ...
+ B_MAT(1,1),B_MAT(2,1),...,B_MAT(wannier_number_gaussian,1)
+ ...
+ B_MAT(1,wannier_number_basis),B_MAT(2,wannier_number_basis),...
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+\verb+wannier_ini_basis_mode+が2の場合、
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+# wannier data
+ &max_loc_wannier
+ ...
+ /
+ ngaukd(1)
+ lgaukd(1), mgaukd(1), alpgkd(1)
+ ...
+ lgaukd(ngaukd(1)), mgaukd(ngaukd(1)), alpgkd(ngaukd(1))
+ ngaukd(2)
+ lgaukd(1), mgaukd(1), alpgkd(1)
+ ...
+ lgaukd(ngaukd(2)), mgaukd(ngaukd(2)), alpgkd(ngaukd(2))
+ ...
+
+ ...
+ ngaukd(number_element)
+ lgaukd(1), mgaukd(1), alpgkd(1)
+ ...
+ lgaukd(ngaukd(number_element)), mgaukd(ngaukd(number_element)), alpgkd(ngaukd(number_element))
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+\verb+wannier_ini_basis_mode+が1の場合、\verb+lgau, mgau, alpg, taug, cgau+はワニエ関数計算の initial guess
+$\phi_i({\bf r})$ を規定するためのガウシアン $g_j({\bf r})$ のパラメータ
+で、それぞれ、ガウシアンの軌道角運動量 $l$、磁気角運動量 $m$ (ただし
+xTAPPの実表現の規約に基づく)、軌道指数 ($e^{-\alpha|{\bf r}-{\bf
+\tau}|^2}$ における $\alpha$ で単位は原子単位)、中心位置 ${\bf \tau}$ (格
+子座標系)、スピノル成分の番号(1または2)である。\verb+cgau+を省略すると1される。
+\verb+number_component+が1の場合\verb+cgau+は常に1なので省略しても良い。
+なお、xTAPPの実表現の規約では、
+\begin{enumerate}
+ \item s軌道 ($l = 1$): $m = 1$ 
+ \item p軌道 ($l = 2$): $m = (1,2,3) = (-y, z, -x)$
+ \item d軌道 ($l = 3$): $m = (1,2,3,4,5) = (xy, -yz, 3z^2-1, -zx, x^2-y^2)$
+\end{enumerate}
+
+である。
+
+Initial guess $\phi_i({\bf r})$ がそのままガウシアン $g_j({\bf r})$ に対応する場合 (原子ワニエ軌道を求めたい場合) は上述設定のみでよいが、分子軌道、たとえば最高占有軌道に相当するワニエ関数を求めたい場合、分子ワニエ関数の initial guess は必ずしも一個のガウシアンだけから構築できない。この場合は、付加的なB行列　\verb+B_MAT+ を導入して対処する。この場合、initial guess $\phi_i({\bf r})$ はガウシアンの縮約として表され、縮約係数 $B_{ji}$ を用いて以下のように書かれる:
+\begin{eqnarray}
+\phi_i({\bf r})=\sum_{j} B_{ji} g_j({\bf r}).  
+\nonumber  
+\end{eqnarray}
+ここで、B行列の第一添字 $j$ が、ガウシアンに対応する添字、第二添字 $i$ が
+合成の結果できる initial guess を表す添字である。デフォルトでは、
+$B_{ji}$は単位行列にセットされており、この場合、一個のガウシアンがそのま
+ま initial guess に対応する。
+なおB行列には複素数を書くこともできる。
+
+一方で\verb+wannier_ini_basis_mode+が2の場合、1とは異なって原子種ごとに
+ワニエ関数計算の initial guess $\phi_i({\bf r})$を、各原子核の位置においた
+単体のガウシアンで設定する。つまり、自動的にB行列は単位行列として
+設定される。\verb+ngaukd+はそれぞれの原子種が持っているガウシアンの数、
+\verb+lgaukd+、\verb+lgaukd+、\verb+alpgkd+はそれぞれ、ガウシアンの
+軌道角運動量、磁気角運動量、軌道指数である。また、この場合
+ワニエ関数の数、ワニエ関数の元となるバンドとエネルギーの範囲も自動設定される。
+
+namelist \verb+max_loc_wannier+の内容は
+
+\vspace{\baselineskip}\hrule
+\begin{verbatim}
+wannier_ini_basis_mode
+wannier_target_spin
+wannier_band_lower
+wannier_band_upper
+wannier_cell_type
+wannier_eng_lower
+wannier_eng_upper
+wannier_number_gaussian
+wannier_target_number
+wannier_ident_b_mat
+wannier_range_lattice_trans
+wannier_number_basis
+wannier_threshold_spillage
+wannier_threshold_spread
+wannier_spread_mix
+program_mode
+\end{verbatim}
+\hrule\vspace{\baselineskip}
+
+である。名前の内容は、
+
+\begin{longtable}{cp{55mm}p{65mm}}
+\hline
+ & name & comment \\
+\hline
+\endhead
+\hline
+\endfoot
+a & wannier\_ini\_basis\_mode & ワニエ関数のinitial guessを設定するモード。デフォルトは1。 \\
+a & wannier\_target\_spin & ワニエ関数を計算するスピンの番号。デフォルトは1。 \\
+ & wannier\_band\_lower & ワニエ関数の構成に使用するバンドの下限\\
+ & wannier\_band\_upper & ワニエ関数の構成に使用するバンドの上限\\
+ & wannier\_cell\_type & 計算セルの形状。1: simple cubic, 2: fcc, 3: bcc, 4: hcp, 5: orthorhombic and tetragonal, 6: monoclinic, 7: triclinic, 8: rhombohedral\\
+ & wannier\_eng\_lower & ワニエ関数を計算するエネルギーの下限\\
+ & wannier\_eng\_upper & ワニエ関数を計算するエネルギーの上限\\
+ & wannier\_number\_gaussian & ワニエ関数のinitial guessのガウシアンの数\\
+ & wannier\_target\_number & 実空間表示を計算するワニエ関数の番号。モード\verb+recp_to_real+で必要。\\
+a & wannier\_ident\_b\_mat & ワニエ関数のinitial guessを与えるガウシアンの合成係数が自明ならT、それ以外はF。自明でない場合にはB\_MATを入力する。デフォルトはT。\\
+ & wannier\_range\_lattice\_trans & ワニエ関数によってハミルトニアンの係数を求めるときの格子範囲\\
+a & wannier\_number\_basis & 計算するワニエ軌道の数。未指定の場合wannier\_number\_gaussianに等しい。\\
+a & wannier\_threshold\_spillage & spillageを最小化する時の閾値。デフォルトは\verb+1.0d-4+。\\
+a & wannier\_threshold\_spread & spreadを最小化する時の閾値。デフォルトは\verb+1.0d-4+。\\
+a & wannier\_spread\_mix & spreadを最小化する際の混合パラメータ。デフォルトは1.0。\\
+a & program\_mode & プログラムの実行モード。デフォルトは\verb+generate_rcp+。\verb+recp_to_real+を指定すると、ワニエ関数の実空間表現を計算できる。\\
+\end{longtable}
+
+である。先頭にaがついているものは設定しなければ自動的に値がセットされる。
+dがついているものは設定しなければデフォルトで機能が無効になる。
+（機能を無効にする選択肢に$\ast$をつけている。）
+
+wannier\_cell\_typeに関連して、計算セルの形状については制限がある。
+\begin{itemize}
+ \item hcp: c軸は3番目の軸であること。a,b軸のなす角$\gamma$は$120^\circ$であること。
+ \item monoclinic: a軸はx軸と平行、b軸はy軸と平行であること。
+ \item triclinic: a軸はx軸と平行、b軸はx,y平面内であること。
+\end{itemize}
+
+\end{document}
